@@ -1,4 +1,4 @@
-# LSSD Case Board
+#Case Board
 
 A collaborative investigation board built for law enforcement roleplay communities. Create case boards with pins, evidence threads, and an interactive map — all saved locally in your browser.
 

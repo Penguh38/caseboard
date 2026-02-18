@@ -1,0 +1,3125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LSSD Case Board</title>
+  <link rel="icon" type="image/png" href="https://i.ibb.co/3mVckKGC/LSSD.png">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0e13;
+      --bg-card: #131820;
+      --bg-elevated: #1a2028;
+      --bg-hover: #242d38;
+      --border: #2a3441;
+      --border-light: #3d4a5c;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-red: #f85149;
+      --accent-orange: #d29922;
+      --accent-purple: #a371f7;
+      --accent-pink: #db61a2;
+      --accent-cyan: #39c5cf;
+      --accent-yellow: #e3b341;
+      --accent-gold: #c9a227;
+      --zoom-compensate: 1;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; height: 100vh; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
+    
+    .loading-screen { position: fixed; inset: 0; background: var(--bg-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+    .loading-screen.hidden { display: none; }
+    .loading-logo { font-size: 2rem; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; }
+    .loading-logo img { margin-bottom: 10px; }
+    .loading-text { color: var(--text-secondary); margin-bottom: 20px; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .header { height: 40px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 12px; z-index: 100; position: relative; }
+    .header-tabs { display: flex; gap: 2px; background: var(--bg-elevated); padding: 2px; border-radius: 6px; margin-left: 8px; }
+    .header-tab { padding: 4px 12px; font-size: 0.7rem; font-weight: 500; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 4px; transition: all 0.15s; }
+    .header-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .header-tab.active { background: var(--accent-blue); color: white; }
+    .logo { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.85rem; }
+    .case-info { flex: 1; display: flex; align-items: center; gap: 8px; }
+    .editable-field { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-secondary); background: var(--bg-elevated); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; }
+    .editable-field:hover { background: var(--bg-hover); border-color: var(--accent-blue); }
+    .editable-title { font-size: 0.8rem; font-weight: 500; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; }
+    .editable-title:hover { background: var(--bg-elevated); border-color: var(--border); }
+    .collab-indicator { display: none; align-items: center; gap: 6px; padding: 4px 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px; font-size: 0.75rem; }
+    .collab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .header-actions { display: flex; gap: 4px; align-items: center; }
+    .zoom-controls { display: flex; align-items: center; gap: 2px; background: var(--bg-elevated); padding: 2px; border-radius: 4px; border: 1px solid var(--border); }
+    .zoom-btn { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 3px; font-size: 0.8rem; transition: all 0.15s ease; }
+    .zoom-btn:hover { background: var(--bg-hover); color: var(--text-primary); transform: scale(1.1); }
+    .zoom-btn:active { transform: scale(0.95); }
+    .zoom-level { font-size: 0.6rem; color: var(--text-secondary); min-width: 32px; text-align: center; }
+    .btn { font-family: inherit; font-size: 0.65rem; font-weight: 500; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; background: var(--bg-elevated); color: var(--text-primary); transition: all 0.15s ease; user-select: none; }
+    .btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+    .btn-primary:hover { background: #4393e6; box-shadow: 0 2px 8px rgba(88,166,255,0.3); }
+    .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: white; }
+    .btn-success:hover { background: #35a045; box-shadow: 0 2px 8px rgba(63,185,80,0.3); }
+    .btn-danger { color: var(--accent-red); }
+    .btn-danger:hover { background: rgba(248,81,73,0.1); }
+    .btn.active { background: var(--accent-purple); border-color: var(--accent-purple); color: white; box-shadow: 0 0 0 2px rgba(163,113,247,0.3); }
+    .save-indicator { display: flex; align-items: center; gap: 4px; font-size: 0.65rem; color: var(--text-muted); padding: 0 8px; transition: color 0.2s; }
+    .save-indicator.saved { color: var(--accent-green); }
+    .save-indicator.saving { color: var(--accent-orange); }
+
+    .main-container { display: flex; height: calc(100vh - 40px); }
+    
+    .sidebar { width: 180px; background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar.collapsed { width: 0; overflow: hidden; }
+    .sidebar-toggle { position: fixed; left: 180px; top: 50%; transform: translateY(-50%); width: 20px; height: 40px; background: var(--bg-card); border: 1px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); z-index: 60; transition: left 0.2s; font-size: 0.75rem; }
+    .sidebar-toggle:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .sidebar-toggle.collapsed { left: 0; }
+    .sidebar-section { padding: 12px; border-bottom: 1px solid var(--border); }
+    .sidebar-title { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stat-item { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 8px; text-align: center; }
+    .stat-value { font-size: 1.1rem; font-weight: 700; }
+    .stat-label { font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; }
+    .pin-types-list { display: flex; flex-direction: column; gap: 1px; }
+    .pin-type-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 3px; }
+    .pin-type-dot { width: 8px; height: 8px; border-radius: 2px; }
+    .pin-type-name { flex: 1; font-size: 0.75rem; }
+    .pin-type-count { font-size: 0.7rem; color: var(--text-muted); }
+    .connection-colors { display: flex; flex-direction: column; gap: 1px; }
+    .connection-color-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 3px; cursor: pointer; }
+    .connection-color-item:hover { background: var(--bg-elevated); }
+    .connection-color-item.selected { background: var(--bg-elevated); outline: 1px solid var(--border-light); }
+    .connection-line-preview { width: 24px; height: 3px; border-radius: 1px; }
+    .connection-color-name { font-size: 0.75rem; }
+    .line-styles { display: flex; gap: 4px; margin-top: 8px; }
+    .line-style-btn { flex: 1; padding: 4px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); font-size: 0.7rem; cursor: pointer; }
+    .line-style-btn.selected { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+    .sidebar-footer { margin-top: auto; padding: 14px 10px; border-top: 1px solid var(--border); text-align: center; background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-elevated) 100%); }
+    .sidebar-footer-text { font-size: 0.55rem; color: var(--text-muted); line-height: 1.6; letter-spacing: 0.5px; }
+    .sidebar-footer-text .dev-name { color: var(--accent-blue); font-weight: 600; letter-spacing: 0.8px; }
+    .sidebar-footer-text .copyright { font-size: 0.45rem; opacity: 0.7; margin-top: 2px; display: block; }
+
+    .board-container { flex: 1; position: relative; overflow: hidden; background: var(--bg-dark); }
+    .board { position: absolute; width: 8000px; height: 8000px; cursor: grab; transform-origin: 0 0; }
+    .board::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: 400px; background: url('https://i.ibb.co/3mVckKGC/LSSD.png') center/contain no-repeat; opacity: 0.06; pointer-events: none; }
+    .board.grabbing { cursor: grabbing; }
+    
+    /* Map Board Styles */
+    .map-container { flex: 1; position: relative; overflow: hidden; background: #1e4a6d; display: none; }
+    .map-container.active { display: block; }
+    .board-container.hidden { display: none; }
+    .map-board { position: absolute; cursor: grab; transform-origin: 0 0; }
+    .map-board img { display: block; width: 100%; height: 100%; }
+    .map-board.grabbing { cursor: grabbing; }
+    .map-connections-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .map-markers-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .map-marker { position: absolute; transform: translate(-50%, -50%); cursor: pointer; pointer-events: auto; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); transition: transform 0.15s, z-index 0s; display: flex; flex-direction: column; align-items: center; }
+    .map-marker:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 100; }
+    .map-marker.selected { transform: translate(-50%, -50%) scale(1.15); filter: drop-shadow(0 0 8px var(--accent-blue)); z-index: 99; }
+    .map-marker-icon { text-align: center; line-height: 1; }
+    .map-marker-label { background: rgba(13,17,23,0.95); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 500; white-space: nowrap; margin-top: 2px; color: var(--text-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.4); max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+    .marker-info-section { margin-bottom: 16px; }
+    .marker-info-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .marker-info-value { color: var(--text-primary); line-height: 1.5; }
+    .marker-info-links { display: flex; flex-direction: column; gap: 8px; }
+    .marker-info-link { display: block; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--accent-blue); text-decoration: none; font-size: 0.85rem; transition: all 0.15s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .marker-info-link:hover { background: var(--bg-secondary); border-color: var(--accent-blue); transform: translateX(4px); }
+    .map-zone { position: absolute; pointer-events: auto; cursor: pointer; transition: all 0.15s; }
+    .map-zone polygon { transition: all 0.15s ease; pointer-events: all; cursor: pointer; }
+    .map-zone:hover polygon { opacity: 0.7 !important; filter: brightness(1.1); }
+    .map-zone.selected polygon { stroke-width: 3px !important; filter: brightness(1.2); }
+    .map-zones-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    .map-zones-layer polygon { pointer-events: all; cursor: pointer; }
+    .map-zone-label { position: absolute; transform: translate(-50%, -50%); font-weight: 700; font-size: 16px; pointer-events: none; white-space: nowrap; letter-spacing: 1px; text-transform: uppercase; color: white !important; -webkit-text-stroke: 2px #000; paint-order: stroke fill; text-shadow: 0 0 8px #000, 0 0 12px #000, 0 0 20px #000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; }
+    .zone-resize-handle { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid var(--accent-blue); border-radius: 50%; transform: translate(-50%, -50%); cursor: nwse-resize; pointer-events: auto; z-index: 100; transition: transform 0.1s; }
+    .zone-resize-handle:hover { transform: translate(-50%, -50%) scale(1.3); background: var(--accent-blue); }
+    .line-handle { transition: transform 0.1s; }
+    .line-handle:hover { transform: scale(1.3); }
+    .zone-toolbar { position: absolute; top: 100%; left: 0; margin-top: 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; z-index: 1000; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none; }
+    .zone-toolbar.show { display: block; }
+    .zone-toolbar-title { font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); text-transform: uppercase; }
+    .zone-toolbar-colors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .zone-toolbar-color { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+    .zone-toolbar-color:hover { transform: scale(1.15); }
+    .zone-toolbar-color.selected { border-color: white; box-shadow: 0 0 0 2px var(--accent-blue); }
+    .zone-toolbar-modes { display: flex; flex-direction: column; gap: 4px; }
+    .zone-mode-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.75rem; color: var(--text-primary); transition: all 0.15s; }
+    .zone-mode-btn:hover { background: var(--bg-hover); border-color: var(--accent-blue); }
+    .zone-mode-btn .mode-icon { font-size: 1rem; }
+    .zone-mode-btn .mode-desc { font-size: 0.65rem; color: var(--text-muted); }
+    .map-zone-drawing { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .map-zone-point { position: absolute; width: 12px; height: 12px; background: white; border: 2px solid var(--accent-blue); border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; pointer-events: auto; z-index: 100; transition: all 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .map-zone-point:hover { transform: translate(-50%, -50%) scale(1.3); }
+    .map-zone-point:first-child { background: var(--accent-green); border-color: var(--accent-green); }
+    .zone-color-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+    .zone-color-option { width: 28px; height: 28px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+    .zone-color-option:hover { transform: scale(1.1); }
+    .zone-color-option.selected { border-color: white; box-shadow: 0 0 0 2px var(--accent-blue); }
+    .map-sidebar { width: 200px; background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+    .map-sidebar.collapsed { width: 0; overflow: hidden; }
+    .marker-type-btn { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; border: 1px solid transparent; background: transparent; color: var(--text-primary); width: 100%; text-align: left; }
+    .marker-type-btn:hover { background: var(--bg-elevated); }
+    .marker-type-btn.selected { background: var(--bg-elevated); border-color: var(--accent-blue); }
+    .marker-type-icon { font-size: 1rem; }
+    
+    .connections-layer { position: absolute; inset: 0; z-index: 5; }
+    .connection-wrapper { position: absolute; }
+    .connection-hitbox { position: absolute; height: 16px; transform-origin: 0 50%; pointer-events: auto; cursor: grab; background: transparent; margin-top: -6px; }
+    .connection-hitbox:active { cursor: grabbing; }
+    .connection-line { position: absolute; height: 2px; transform-origin: 0 50%; pointer-events: none; background: currentColor; top: 6px; left: 0; transition: height 0.1s, filter 0.1s, top 0.1s; }
+    .connection-hitbox:hover .connection-line { height: 3px; top: 5px; filter: drop-shadow(0 0 6px currentColor); }
+    .connection-line.dashed { background: repeating-linear-gradient(90deg, currentColor 0px, currentColor 8px, transparent 8px, transparent 14px); }
+    .connection-line.solid { background: currentColor; }
+    .connection-line.dotted { background: repeating-linear-gradient(90deg, currentColor 0px, currentColor 3px, transparent 3px, transparent 7px); }
+    .connection-label { position: absolute; background: var(--bg-card); border: 1px solid var(--border); padding: 3px 8px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; white-space: nowrap; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; z-index: 6; }
+    .connection-handle { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.95); border: 2px solid currentColor; border-radius: 50%; transform: translate(-50%, -50%); cursor: crosshair; pointer-events: auto; z-index: 20; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .connection-handle:hover { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 8px currentColor, 0 2px 6px rgba(0,0,0,0.3); }
+    .pin.snap-target { box-shadow: 0 0 0 3px var(--accent-blue), 0 0 30px var(--accent-blue) !important; transform: scale(1.02); }
+    .pin.snap-target .pin-card { border-color: var(--accent-blue) !important; }
+
+    .pins-container { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+    .pin { position: absolute; cursor: grab; user-select: none; z-index: 10; pointer-events: auto; transition: box-shadow 0.2s ease, transform 0.15s ease; }
+    .pin:hover { z-index: 20; }
+    .pin.selected { z-index: 30; }
+    .pin.dragging { z-index: 100; cursor: grabbing; }
+    .pin-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,0.4); transition: border-color 0.15s, box-shadow 0.15s; }
+    .pin.selected .pin-card { border-color: var(--accent-blue); box-shadow: 0 3px 20px rgba(88,166,255,0.3); }
+    .pin-card:hover { border-color: var(--text-muted); }
+    .pin-header { padding: 6px; display: flex; align-items: stretch; gap: 5px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+    .pin-type-indicator { width: 3px; border-radius: 2px; flex-shrink: 0; min-height: 100%; }
+    .pin-header-content { flex: 1; min-width: 0; min-height: 28px; display: flex; flex-direction: column; justify-content: center; }
+    .pin-title { font-size: 0.8rem; font-weight: 600; line-height: 1.2; }
+    .pin-type-label { font-size: 0.6rem; font-weight: 500; text-transform: uppercase; }
+    .pin-subtitle { font-size: 0.65rem; color: var(--text-secondary); margin-top: 1px; }
+    .pin-image { width: 100%; max-height: 70px; object-fit: cover; display: block; }
+    .pin-body { padding: 6px; overflow: hidden; }
+    .pin-content { font-size: 0.7rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap; }
+    .pin-content-preview { position: relative; max-height: 50px; overflow: hidden; }
+    .pin-content-preview::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 20px; background: linear-gradient(transparent, var(--bg-card)); pointer-events: none; }
+    .pin-read-more { display: inline-block; margin-top: 4px; font-size: 0.65rem; color: var(--accent-blue); cursor: pointer; font-weight: 500; pointer-events: auto; position: relative; z-index: 5; }
+    .pin-read-more:hover { text-decoration: underline; }
+    .pin-fields { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+    .pin-field { display: flex; gap: 4px; font-size: 0.65rem; }
+    .pin-field-label { color: var(--text-muted); min-width: 50px; }
+    .pin-field-value { color: var(--text-primary); font-weight: 500; }
+    .pin-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); overflow: hidden; max-height: 40px; }
+    .pin-meta-item { font-size: 0.6rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pin-actions { display: none; padding: 4px 6px; gap: 2px; background: var(--bg-dark); border-top: 1px solid var(--border); }
+    .pin.selected .pin-actions { display: flex; }
+    .pin-btn { flex: 1; padding: 3px; font-size: 0.6rem; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--bg-elevated); color: var(--text-primary); text-align: center; }
+    .pin-btn:hover { background: var(--bg-hover); }
+    .pin-btn.danger:hover { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+    .pin.size-small .pin-card { width: 130px; }
+    .pin.size-medium .pin-card { width: 160px; }
+    .pin.size-large .pin-card { width: 200px; }
+    .pin.sticky .pin-card { background: #e3b341; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+    .pin.sticky .pin-header { background: #d4a62e; border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .pin.sticky .pin-title, .pin.sticky .pin-type-label, .pin.sticky .pin-content, .pin.sticky .pin-meta-item { color: #1a1a1a !important; }
+    .pin.sticky .pin-body { background: #e3b341; }
+    .pin.sticky .pin-actions { background: #d4a62e; border-top: 1px solid rgba(0,0,0,0.1); }
+    .pin.sticky .pin-btn { background: rgba(255,255,255,0.3); border-color: rgba(0,0,0,0.1); color: #1a1a1a; }
+    .pin.sticky .pin-btn:hover { background: rgba(255,255,255,0.5); }
+    .todo-list { list-style: none; padding: 0; margin: 0; }
+    .todo-item { display: flex; align-items: flex-start; gap: 5px; padding: 2px 0; font-size: 0.7rem; color: #1a1a1a; }
+    .todo-item input[type="checkbox"] { margin-top: 2px; cursor: pointer; width: 13px; height: 13px; accent-color: #1a1a1a; }
+    .todo-item.done span { text-decoration: line-through; opacity: 0.5; }
+    .todo-item span { flex: 1; line-height: 1.4; }
+    .pin-rotate-handle { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px; background: var(--accent-blue); border-radius: 50%; cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 10px; opacity: 0; transition: opacity 0.2s; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .pin:hover .pin-rotate-handle, .pin.selected .pin-rotate-handle { opacity: 1; }
+    .pin-rotate-handle:hover { background: #58a6ff; transform: translateX(-50%) scale(1.1); }
+    .pin-rotate-handle:active { cursor: grabbing; }
+
+    /* Context Menu */
+    .context-menu { position: fixed; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 4px 0; min-width: 150px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 10000; display: none; transform: scale(0.95); opacity: 0; transition: transform 0.1s ease, opacity 0.1s ease; }
+    .context-menu.show { display: block; transform: scale(1); opacity: 1; }
+    .context-menu-item { padding: 6px 10px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--text-primary); user-select: none; transition: background 0.1s; }
+    .context-menu-item:hover { background: var(--bg-hover); }
+    .context-menu-divider { height: 1px; background: var(--border); margin: 4px 0; pointer-events: none; }
+    .context-menu-item.danger { color: var(--accent-red); }
+    .context-menu-item.danger:hover { background: rgba(248,81,73,0.15); }
+
+    .minimap-container { position: absolute; bottom: 12px; right: 12px; z-index: 50; }
+    .minimap { width: 150px; height: 100px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .minimap.hidden { display: none; }
+    .minimap-content { position: relative; width: 100%; height: 100%; }
+    .minimap-viewport { position: absolute; border: 2px solid var(--accent-blue); background: rgba(88,166,255,0.1); }
+    .minimap-pin { position: absolute; width: 3px; height: 3px; border-radius: 1px; }
+    .minimap-toggle { position: absolute; bottom: 0; right: 0; width: 30px; height: 30px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.9rem; }
+    .minimap-toggle:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .minimap:not(.hidden) ~ .minimap-toggle { bottom: 110px; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; }
+    .modal-overlay.open { display: flex; opacity: 1; }
+    .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; max-width: 700px; max-height: 85vh; width: 90%; overflow: hidden; transform: scale(0.95); transition: transform 0.2s ease; }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal-header { padding: 16px 20px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .modal-type-indicator { width: 4px; height: 32px; border-radius: 2px; transition: background 0.2s; }
+    .modal-header-content { flex: 1; }
+    .modal-title { font-size: 1.1rem; font-weight: 600; }
+    .modal-subtitle { font-size: 0.75rem; color: var(--text-secondary); }
+    .modal-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 6px; font-size: 1.2rem; transition: all 0.15s; }
+    .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); transform: scale(1.1); }
+    .modal-body { padding: 20px; overflow-y: auto; max-height: calc(85vh - 140px); }
+    .modal-body-text { font-size: 0.95rem; line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap; }
+    .modal-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .modal-field { background: var(--bg-elevated); padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+    .modal-field-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .modal-field-value { font-size: 0.95rem; font-weight: 500; }
+    .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; text-transform: uppercase; transition: color 0.15s; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; color: var(--text-primary); font-family: inherit; font-size: 0.85rem; transition: all 0.15s ease; user-select: text; -webkit-user-select: text; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+    .form-textarea { min-height: 100px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .share-link-box { display: flex; gap: 8px; margin-top: 10px; }
+    .share-link-input { flex: 1; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 5px; color: var(--text-primary); font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+    .share-permissions { margin-top: 15px; }
+    .share-permission-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; margin-bottom: 8px; cursor: pointer; }
+    .share-permission-item:hover { background: var(--bg-hover); }
+    .share-permission-item.selected { border-color: var(--accent-blue); background: rgba(88,166,255,0.1); }
+    .share-permission-radio { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .share-permission-item.selected .share-permission-radio { border-color: var(--accent-blue); }
+    .share-permission-item.selected .share-permission-radio::after { content: ''; width: 10px; height: 10px; background: var(--accent-blue); border-radius: 50%; }
+    .share-permission-info { flex: 1; }
+    .share-permission-title { font-size: 0.9rem; font-weight: 500; }
+    .share-permission-desc { font-size: 0.75rem; color: var(--text-secondary); }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-card); border: 1px solid var(--border); padding: 12px 24px; border-radius: 8px; font-size: 0.85rem; z-index: 2000; opacity: 0; transition: all 0.3s; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .connect-hint { position: fixed; top: 50px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--accent-purple); color: white; padding: 6px 14px; border-radius: 16px; font-size: 0.7rem; font-weight: 500; z-index: 100; opacity: 0; pointer-events: none; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(163,113,247,0.3); }
+    .connect-hint.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    
+    /* Agency Selection Modal */
+    .agency-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .agency-modal.open { opacity: 1; pointer-events: auto; }
+    .agency-modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .agency-modal-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); text-align: center; margin-bottom: 8px; }
+    .agency-modal-subtitle { font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin-bottom: 24px; }
+    .agency-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+    .agency-card { background: var(--bg-elevated); border: 2px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .agency-card:hover { border-color: var(--accent-blue); background: var(--bg-hover); transform: translateY(-2px); }
+    .agency-card.selected { border-color: var(--accent-green); background: rgba(63,185,80,0.1); }
+    .agency-card img { width: 80px; height: 80px; object-fit: contain; border-radius: 8px; }
+    .agency-card-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); text-align: center; }
+    .agency-card-full { font-size: 0.7rem; color: var(--text-secondary); text-align: center; line-height: 1.3; }
+    .agency-confirm-btn { display: block; width: 100%; margin-top: 24px; padding: 14px; background: var(--accent-green); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .agency-confirm-btn:hover { background: #2ea043; }
+    .agency-confirm-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <!-- Agency Selection Modal -->
+  <div class="agency-modal" id="agencyModal">
+    <div class="agency-modal-content">
+      <div class="agency-modal-title">🏛️ Select Your Agency</div>
+      <div class="agency-modal-subtitle">Choose the department you work for. This will customize the Case Board for your agency.</div>
+      <div class="agency-grid" id="agencyGrid"></div>
+      <button class="agency-confirm-btn" id="agencyConfirmBtn" disabled>Select Agency to Continue</button>
+    </div>
+  </div>
+
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img id="loadingLogo" src="https://i.ibb.co/3mVckKGC/LSSD.png" style="width:60px;height:60px;object-fit:contain;"><span id="loadingTitle">Case Board</span></div>
+    <div class="loading-text">Connecting...</div>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <header class="header">
+    <div class="logo"><img id="headerLogo" src="https://i.ibb.co/3mVckKGC/LSSD.png" style="width:22px;height:22px;object-fit:contain;"><span id="headerTitle">Case Board</span></div>
+    <div class="header-tabs">
+      <button class="header-tab active" data-tab="board">📋 Case Board</button>
+      <button class="header-tab" data-tab="map">🗺️ Map Board</button>
+    </div>
+    <div class="case-info">
+      <div class="editable-field" id="caseNumber">#2024-0001</div>
+      <div class="editable-title" id="caseTitle">New Investigation</div>
+    </div>
+    <div class="save-indicator saved" id="saveIndicator"><span>● Saved</span></div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoomOutBtn">−</button>
+      <span class="zoom-level" id="zoomLevel">100%</span>
+      <button class="zoom-btn" id="zoomInBtn">+</button>
+      <button class="zoom-btn" id="resetZoomBtn">⟲</button>
+    </div>
+    <div class="header-actions" id="boardActions">
+      <button class="btn btn-primary" id="addPinBtn">+ Add Pin</button>
+      <button class="btn" id="connectBtn">🔗 Connect</button>
+      <button class="btn" id="freeLineBtn">📏 Free Line</button>
+      <button class="btn" id="hidePinLabelsBtn" title="Toggle pin labels">🏷️ Labels</button>
+      <button class="btn btn-success" id="shareBtn">🔗 Share</button>
+      <button class="btn" id="myCasesBtn">📁 My Cases</button>
+      <button class="btn" id="newCaseBtn">+ New</button>
+      <button class="btn" id="profileBtn">👤 Profile</button>
+    </div>
+    <div class="header-actions" id="mapActions" style="display:none;">
+      <button class="btn btn-primary" id="addMarkerBtn">+ Marker</button>
+      <div style="position:relative;">
+        <button class="btn" id="addZoneBtn">🔷 Zone</button>
+        <div class="zone-toolbar" id="zoneToolbar">
+          <div class="zone-toolbar-title">Zone Color</div>
+          <div class="zone-toolbar-colors" id="zoneToolbarColors">
+            <div class="zone-toolbar-color selected" data-color="#22c55e" style="background:#22c55e"></div>
+            <div class="zone-toolbar-color" data-color="#eab308" style="background:#eab308"></div>
+            <div class="zone-toolbar-color" data-color="#ef4444" style="background:#ef4444"></div>
+            <div class="zone-toolbar-color" data-color="#3b82f6" style="background:#3b82f6"></div>
+            <div class="zone-toolbar-color" data-color="#a855f7" style="background:#a855f7"></div>
+            <div class="zone-toolbar-color" data-color="#f97316" style="background:#f97316"></div>
+          </div>
+          <div class="zone-toolbar-modes">
+            <button class="zone-mode-btn" id="zoneDrawMode"><span class="mode-icon">✏️</span><div><div>Draw Zone</div><div class="mode-desc">Click to add points</div></div></button>
+          </div>
+          <div class="zone-toolbar-title" style="margin-top:8px;">Quick Shapes</div>
+          <div class="zone-toolbar-modes">
+            <button class="zone-mode-btn" id="zoneSquareMode"><span class="mode-icon">◼</span>Square</button>
+            <button class="zone-mode-btn" id="zoneCircleMode"><span class="mode-icon">●</span>Circle</button>
+            <button class="zone-mode-btn" id="zoneHexMode"><span class="mode-icon">⬡</span>Hexagon</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn" id="mapConnectBtn">🔗 Connect</button>
+      <button class="btn" id="mapFreeLineBtn">📏 Line</button>
+      <button class="btn" id="hideLabelsBtn" title="Toggle marker labels">🏷️ Labels</button>
+      <button class="btn btn-success" id="shareBtn2">🔗 Share</button>
+      <button class="btn" id="myCasesBtn2">📁 My Cases</button>
+      <button class="btn" id="newCaseBtn2">+ New</button>
+      <button class="btn" id="profileBtn2">👤 Profile</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Statistics</div>
+        <div class="stat-grid">
+          <div class="stat-item"><div class="stat-value" id="pinCount">0</div><div class="stat-label">Pins</div></div>
+          <div class="stat-item"><div class="stat-value" id="linkCount">0</div><div class="stat-label">Links</div></div>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">Pin Types</div>
+        <div class="pin-types-list" id="pinTypesList"></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">Connection Color</div>
+        <div class="connection-colors" id="connectionColors"></div>
+        <div class="line-styles" id="lineStyles">
+          <button class="line-style-btn selected" data-style="dashed">Dashed</button>
+          <button class="line-style-btn" data-style="solid">Solid</button>
+          <button class="line-style-btn" data-style="dotted">Dotted</button>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-text">
+          Developed by <span class="dev-name">PENGU</span>
+          <span class="copyright">© 2025 • All Rights Reserved</span>
+        </div>
+      </div>
+    </aside>
+    <button class="sidebar-toggle" id="sidebarToggle">◀</button>
+
+    <div class="board-container" id="boardContainer">
+      <div class="board" id="board">
+        <div class="connections-layer" id="connectionsLayer"></div>
+        <div class="pins-container" id="pinsContainer"></div>
+      </div>
+      <div class="minimap-container">
+        <div class="minimap" id="minimap"><div class="minimap-content" id="minimapContent"><div class="minimap-viewport" id="minimapViewport"></div></div></div>
+        <button class="minimap-toggle" id="minimapToggle">🗺️</button>
+      </div>
+    </div>
+
+    <!-- Map Board -->
+    <div class="map-container" id="mapContainer">
+      <div class="map-board" id="mapBoard">
+        <img src="https://www.bragitoff.com/wp-content/uploads/2015/11/GTAV-HD-MAP-satellite.jpg" id="mapImage" draggable="false" onload="initMapSize()">
+        <svg class="map-zones-layer" id="mapZonesLayer"></svg>
+        <div class="map-zone-labels" id="mapZoneLabels" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+        <div class="map-zone-drawing" id="mapZoneDrawing"></div>
+        <div class="map-connections-layer" id="mapConnectionsLayer"></div>
+        <div class="map-markers-layer" id="mapMarkersLayer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connect-hint" id="connectHint">Click another pin to connect</div>
+  <div class="toast" id="toast"></div>
+
+  <!-- Map Marker Modal -->
+  <div class="modal-overlay" id="markerModal">
+    <div class="modal" style="max-width: 450px;">
+      <div class="modal-header">
+        <div class="modal-type-indicator" id="markerModalIndicator" style="background: var(--accent-red);"></div>
+        <div class="modal-header-content"><div class="modal-title" id="markerModalTitle">Add Map Marker</div></div>
+        <button class="modal-close" id="closeMarkerBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Marker Type</label>
+          <select class="form-select" id="markerTypeSelect">
+            <optgroup label="Investigation">
+              <option value="location">📍 Location</option>
+              <option value="crime">🔴 Crime Scene</option>
+              <option value="evidence">📦 Evidence Found</option>
+              <option value="weapon">🔫 Weapon Found</option>
+              <option value="death">💀 Body Found/Fatality</option>
+              <option value="arrest">🚨 Arrest Location</option>
+            </optgroup>
+            <optgroup label="People">
+              <option value="witness">👁️ Witness Location</option>
+              <option value="suspect">🎯 Suspect Sighting</option>
+              <option value="victim">💔 Victim Location</option>
+              <option value="informant">🤫 Informant</option>
+              <option value="gang">👥 Gang Territory</option>
+              <option value="meeting">🤝 Meeting Point</option>
+            </optgroup>
+            <optgroup label="Vehicles & Surveillance">
+              <option value="vehicle">🚗 Vehicle Location</option>
+              <option value="parking">🅿️ Parking/Storage</option>
+              <option value="camera">📹 Camera/CCTV</option>
+              <option value="phone">📱 Phone Ping</option>
+              <option value="route">➡️ Route Point</option>
+            </optgroup>
+            <optgroup label="Locations">
+              <option value="residence">🏡 Residence</option>
+              <option value="business">🏢 Business</option>
+              <option value="hideout">🏚️ Hideout/Stash</option>
+              <option value="safe">🏠 Safe House</option>
+              <option value="store">🏪 Store/Shop</option>
+              <option value="bar">🍺 Bar/Club</option>
+            </optgroup>
+            <optgroup label="Services">
+              <option value="police">🚔 Police Station</option>
+              <option value="fire">🚒 Fire Station</option>
+              <option value="hospital">🏥 Hospital/Medical</option>
+              <option value="court">⚖️ Court/Legal</option>
+              <option value="prison">🔒 Prison/Jail</option>
+              <option value="school">🏫 School</option>
+            </optgroup>
+            <optgroup label="Infrastructure">
+              <option value="atm">🏧 ATM</option>
+              <option value="gas">⛽ Gas Station</option>
+              <option value="airport">✈️ Airport</option>
+              <option value="train">🚂 Train Station</option>
+              <option value="water">🌊 Water/Dock</option>
+            </optgroup>
+            <optgroup label="Zones">
+              <option value="poi">⭐ Point of Interest</option>
+              <option value="danger">⚠️ Danger Zone</option>
+              <option value="checkpoint">🛑 Checkpoint</option>
+              <option value="border">🚧 Border/Boundary</option>
+              <option value="drugs">💊 Drug Activity</option>
+              <option value="money">💰 Financial/Money Trail</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Size: <span id="markerSizeValue">28</span>px</label>
+          <input type="range" class="form-input" id="markerSizeInput" min="16" max="64" value="28" style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Label</label>
+          <input type="text" class="form-input" id="markerLabelInput" placeholder="Enter marker label...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="markerDescInput" rows="3" placeholder="Add details about this location..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Links (one per line)</label>
+          <textarea class="form-textarea" id="markerLinksInput" rows="2" placeholder="https://example.com&#10;https://another-link.com"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="markerNotesInput" rows="3" placeholder="Additional notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancelMarkerBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveMarkerBtn">Save Marker</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Marker Info Modal -->
+  <div class="modal-overlay" id="markerInfoModal">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-type-indicator" id="markerInfoIndicator" style="background: var(--accent-blue);"></div>
+        <div class="modal-header-content">
+          <div class="modal-title" id="markerInfoTitle">Location</div>
+          <div class="modal-subtitle" id="markerInfoSubtitle">📍 Location</div>
+        </div>
+        <button class="modal-close" id="closeMarkerInfoBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="markerInfoContent"></div>
+        <div class="marker-info-section" id="markerInfoSizeSection" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div class="marker-info-label">Marker Size: <span id="markerInfoSizeValue">28</span>px</div>
+          <input type="range" class="form-input" id="markerInfoSizeInput" min="16" max="64" value="28" style="width:100%;margin-top:8px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="deleteMarkerInfoBtn">🗑️ Delete</button>
+        <button class="btn" id="closeMarkerInfoBtn2">Close</button>
+        <button class="btn btn-primary" id="editMarkerInfoBtn">✏️ Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone Modal -->
+  <div class="modal-overlay" id="zoneModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <div class="modal-type-indicator" id="zoneModalIndicator" style="background: var(--accent-green);"></div>
+        <div class="modal-header-content"><div class="modal-title" id="zoneModalTitle">Edit Zone</div></div>
+        <button class="modal-close" id="closeZoneBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Zone Name</label>
+          <input type="text" class="form-input" id="zoneNameInput" placeholder="Enter zone name...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div class="zone-color-picker" id="zoneColorPicker">
+            <div class="zone-color-option selected" data-color="#22c55e" style="background:#22c55e"></div>
+            <div class="zone-color-option" data-color="#eab308" style="background:#eab308"></div>
+            <div class="zone-color-option" data-color="#ef4444" style="background:#ef4444"></div>
+            <div class="zone-color-option" data-color="#3b82f6" style="background:#3b82f6"></div>
+            <div class="zone-color-option" data-color="#a855f7" style="background:#a855f7"></div>
+            <div class="zone-color-option" data-color="#f97316" style="background:#f97316"></div>
+            <div class="zone-color-option" data-color="#06b6d4" style="background:#06b6d4"></div>
+            <div class="zone-color-option" data-color="#ec4899" style="background:#ec4899"></div>
+            <div class="zone-color-option" data-color="#84cc16" style="background:#84cc16"></div>
+            <div class="zone-color-option" data-color="#64748b" style="background:#64748b"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Opacity</label>
+          <input type="range" class="form-range" id="zoneOpacityInput" min="10" max="80" value="40" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="zoneNotesInput" rows="2" placeholder="Additional notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancelZoneBtn">Cancel</button>
+        <button class="btn btn-danger" id="deleteZoneBtn" style="display:none;">Delete</button>
+        <button class="btn btn-primary" id="saveZoneBtn">Save Zone</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statement Modal -->
+  <div class="modal-overlay" id="statementModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-type-indicator" id="statementIndicator"></div>
+        <div class="modal-header-content"><div class="modal-title" id="statementTitle">Statement</div><div class="modal-subtitle" id="statementSubtitle"></div></div>
+        <button class="modal-close" id="closeStatementBtn">×</button>
+      </div>
+      <div class="modal-body"><div class="modal-fields" id="statementFields"></div><div class="modal-body-text" id="statementContent"></div></div>
+      <div class="modal-footer"><button class="btn" id="closeStatementBtn2">Close</button><button class="btn btn-primary" id="editStatementBtn">✏️ Edit</button></div>
+    </div>
+  </div>
+
+  <!-- Edit Case Modal -->
+  <div class="modal-overlay" id="editCaseModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header"><div class="modal-title" id="editCaseModalTitle">Edit</div><button class="modal-close" id="closeEditCaseBtn">×</button></div>
+      <div class="modal-body"><div class="form-group"><label class="form-label" id="editCaseLabel">Value</label><input type="text" class="form-input" id="editCaseInput"></div></div>
+      <div class="modal-footer"><button class="btn" id="cancelEditCaseBtn">Cancel</button><button class="btn btn-primary" id="saveEditCaseBtn">Save</button></div>
+    </div>
+  </div>
+
+  <!-- Pin Modal -->
+  <div class="modal-overlay" id="pinModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-type-indicator" id="pinModalIndicator"></div>
+        <div class="modal-title" id="pinModalTitle">Add New Pin</div>
+        <button class="modal-close" id="closePinBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Pin Type</label><select class="form-select" id="pinTypeSelect"></select></div>
+        <div class="form-group"><label class="form-label">Title / Name</label><input type="text" class="form-input" id="pinTitleInput" placeholder="Enter title..."></div>
+        <div class="form-group"><label class="form-label">Image URL (optional)</label><input type="text" class="form-input" id="pinImageInput" placeholder="https://i.imgur.com/... or any image link"></div>
+        <div id="dynamicFields"></div>
+        <div class="form-group"><label class="form-label" id="pinContentLabel">Details / Description</label><textarea class="form-textarea" id="pinContentInput" placeholder="Enter details..."></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Size</label><select class="form-select" id="pinSizeSelect"><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option></select></div>
+          <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="pinPrioritySelect"><option value="low">Low</option><option value="normal" selected>Normal</option><option value="high">High</option><option value="critical">Critical</option></select></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn" id="cancelPinBtn">Cancel</button><button class="btn btn-primary" id="savePinBtn">💾 Save</button></div>
+    </div>
+  </div>
+
+  <!-- Connection Modal -->
+  <div class="modal-overlay" id="connectionModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header"><div class="modal-title">Edit Connection</div><button class="modal-close" id="closeConnBtn">×</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Label</label><input type="text" class="form-input" id="connLabelInput" placeholder="e.g., Witnessed, Related to..."></div>
+        <div class="form-group"><label class="form-label">Color</label><select class="form-select" id="connColorSelect"></select></div>
+        <div class="form-group"><label class="form-label">Style</label><select class="form-select" id="connStyleSelect"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></div>
+        <div class="form-group" id="connLockGroup" style="display:none;"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;"><input type="checkbox" id="connLockedCheck"> <span>🔒 Locked to pins</span></label></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-danger" id="deleteConnBtn">🗑️ Delete</button><button class="btn" id="cancelConnBtn">Cancel</button><button class="btn btn-primary" id="saveConnBtn">Save</button></div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header"><div class="modal-title">🔗 Share Case</div><button class="modal-close" id="closeShareBtn">×</button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Share Link</label>
+          <div class="share-link-box">
+            <input type="text" class="share-link-input" id="shareLinkInput" readonly>
+            <button class="btn btn-primary" id="copyLinkBtn">📋 Copy</button>
+          </div>
+        </div>
+        <div class="share-permissions">
+          <label class="form-label">Anyone with the link can:</label>
+          <div class="share-permission-item selected" data-permission="view">
+            <div class="share-permission-radio"></div>
+            <div class="share-permission-info">
+              <div class="share-permission-title">👁️ View Only</div>
+              <div class="share-permission-desc">Can view but not edit</div>
+            </div>
+          </div>
+          <div class="share-permission-item" data-permission="edit">
+            <div class="share-permission-radio"></div>
+            <div class="share-permission-info">
+              <div class="share-permission-title">✏️ Can Edit</div>
+              <div class="share-permission-desc">Can view and make changes</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:20px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;">
+            <input type="checkbox" id="shareEnabledCheck" checked>
+            <span>Enable link sharing</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn" id="closeShareBtn2">Done</button></div>
+    </div>
+  </div>
+
+  <!-- My Cases Modal -->
+  <div class="modal-overlay" id="casesModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header"><div class="modal-title">📁 My Cases</div><button class="modal-close" id="closeCasesBtn">×</button></div>
+      <div class="modal-body">
+        <div id="casesList" style="max-height:400px;overflow-y:auto;"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary" id="newCaseBtn2">+ New Case</button></div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header"><div class="modal-title">👤 My Profiles</div><button class="modal-close" id="closeProfileBtn">×</button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Select Profile</label>
+          <div style="display:flex;gap:8px;">
+            <select class="form-select" id="profileSelector" style="flex:1;"></select>
+            <button class="btn" id="newProfileBtn" title="New Profile">➕</button>
+            <button class="btn btn-danger" id="deleteProfileBtn" title="Delete Profile">🗑️</button>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:15px 0;padding-top:15px;">
+          <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:12px;">Edit selected profile:</p>
+          <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="profileNameInput" placeholder="Character name..."></div>
+          <div class="form-group"><label class="form-label">Rank</label><input type="text" class="form-input" id="profileRankInput" placeholder="e.g. Deputy, Sergeant, Detective..."></div>
+          <div class="form-group"><label class="form-label">Badge Number</label><input type="text" class="form-input" id="profileBadgeInput" placeholder="e.g. 123"></div>
+        </div>
+        <div id="profilePreview" style="margin-top:15px;padding:12px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border);display:none;">
+          <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Preview</div>
+          <div id="profilePreviewText" style="font-size:0.9rem;font-weight:500;"></div>
+        </div>
+        <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--border);">
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">Current Agency: <span id="currentAgencyName" style="color:var(--accent-blue);font-weight:600;">-</span></div>
+          <button class="btn" id="changeAgencyBtn" style="width:100%;">🏛️ Change Agency</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancelProfileBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveProfileBtn">💾 Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" data-action="addPin">➕ Add Pin</div>
+    <div class="context-menu-item" data-action="addSticky">📌 Add Sticky Note</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="connect">🔗 Connect Pins</div>
+    <div class="context-menu-item" data-action="freeLine">📏 Free Line</div>
+    <div class="context-menu-item" data-action="toggleLabels">🏷️ Toggle Labels</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="myCases">📁 My Cases</div>
+    <div class="context-menu-item" data-action="newCase">📄 New Case</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="share">🔗 Share</div>
+    <div class="context-menu-item" data-action="profile">👤 Profile</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="resetView">🎯 Reset View</div>
+  </div>
+
+  <!-- Pin Context Menu -->
+  <div class="context-menu" id="pinContextMenu">
+    <div class="context-menu-item" data-action="editPin">✏️ Edit</div>
+    <div class="context-menu-item" data-action="dupePin">📋 Duplicate</div>
+    <div class="context-menu-item" data-action="resetRotation">🔄 Reset Rotation</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="connectFrom">🔗 Connect From Here</div>
+    <div class="context-menu-item" data-action="connectTo">🎯 Connect To Here</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" data-action="deletePin">🗑️ Delete</div>
+  </div>
+
+<script>
+// ============================================
+// AGENCY SYSTEM
+// ============================================
+var AGENCIES = {
+  LSSD: { code:'LSSD', name:'LSSD', fullName:'Los Santos Sheriff\'s Department', logo:'https://i.ibb.co/3mVckKGC/LSSD.png' },
+  LSPD: { code:'LSPD', name:'LSPD', fullName:'Los Santos Police Department', logo:'/logos/Logo-LSPD.png' },
+  LSFD: { code:'LSFD', name:'LSFD', fullName:'Los Santos Fire Department', logo:'/logos/Logo-LSFD.png' },
+  LSDA: { code:'LSDA', name:'LSDA', fullName:'Los Santos District Attorney', logo:'/logos/Logo-LSDA.png' },
+  SADOC: { code:'SADOC', name:'SADOC', fullName:'San Andreas Dept. of Corrections', logo:'/logos/Logo-SADOC.png' },
+  SANFIRE: { code:'SANFIRE', name:'SAN FIRE', fullName:'San Andreas Forestry & Fire', logo:'/logos/Logo-SANFIRE.png' }
+};
+var currentAgency = null;
+
+function getSelectedAgency() {
+  var saved = localStorage.getItem('caseBoard_agency');
+  if (saved && AGENCIES[saved]) return AGENCIES[saved];
+  return null;
+}
+
+function setAgency(code) {
+  if (AGENCIES[code]) {
+    currentAgency = AGENCIES[code];
+    localStorage.setItem('caseBoard_agency', code);
+    applyAgencyBranding();
+    return true;
+  }
+  return false;
+}
+
+function applyAgencyBranding() {
+  if (!currentAgency) return;
+  document.title = currentAgency.name + ' Case Board';
+  var favicon = document.querySelector('link[rel="icon"]');
+  if (favicon) favicon.href = currentAgency.logo;
+  var loadingLogo = document.getElementById('loadingLogo');
+  var loadingTitle = document.getElementById('loadingTitle');
+  if (loadingLogo) loadingLogo.src = currentAgency.logo;
+  if (loadingTitle) loadingTitle.textContent = currentAgency.name + ' Case Board';
+  var headerLogo = document.getElementById('headerLogo');
+  var headerTitle = document.getElementById('headerTitle');
+  if (headerLogo) headerLogo.src = currentAgency.logo;
+  if (headerTitle) headerTitle.textContent = currentAgency.name + ' Case Board';
+  var style = document.createElement('style');
+  style.textContent = '.board::before { background-image: url(' + currentAgency.logo + ') !important; }';
+  document.head.appendChild(style);
+}
+
+function showAgencySelection() {
+  var modal = document.getElementById('agencyModal');
+  var grid = document.getElementById('agencyGrid');
+  var btn = document.getElementById('agencyConfirmBtn');
+  var selectedCode = null;
+  
+  // Reset button state
+  btn.disabled = true;
+  btn.textContent = 'Select Agency to Continue';
+  
+  var html = '';
+  for (var code in AGENCIES) {
+    var a = AGENCIES[code];
+    html += '<div class="agency-card" data-agency="' + code + '">';
+    html += '<img src="' + a.logo + '" alt="' + a.name + '">';
+    html += '<div class="agency-card-name">' + a.name + '</div>';
+    html += '<div class="agency-card-full">' + a.fullName + '</div>';
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.agency-card').forEach(function(card) {
+    card.onclick = function() {
+      grid.querySelectorAll('.agency-card').forEach(function(c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      selectedCode = card.dataset.agency;
+      btn.disabled = false;
+      btn.textContent = 'Continue with ' + AGENCIES[selectedCode].name;
+    };
+  });
+  btn.onclick = function() {
+    if (selectedCode) {
+      setAgency(selectedCode);
+      modal.classList.remove('open');
+    }
+  };
+  modal.classList.add('open');
+}
+
+function initAgency() {
+  currentAgency = getSelectedAgency();
+  if (!currentAgency) {
+    showAgencySelection();
+  } else {
+    applyAgencyBranding();
+  }
+}
+
+// ============================================
+// GLOBALS
+// ============================================
+var userId = null;
+var currentCaseId = null;
+var isOwner = false;
+var canEdit = true;
+
+var PIN_TYPES={suspect:{name:'Suspect',icon:'👤',color:'#f85149',fields:['DOB','Phone','Address']},poi:{name:'Person of Interest',icon:'🎯',color:'#f0883e',fields:['DOB','Phone','Address','Reason']},victim:{name:'Victim',icon:'💔',color:'#db61a2',fields:['DOB','Phone','Address']},witness:{name:'Witness',icon:'👁️',color:'#d29922',fields:['DOB','Phone','Address']},officer:{name:'Officer',icon:'🛡️',color:'#3d85c6',fields:['Badge','Callsign','Division']},statement:{name:'Statement',icon:'📋',color:'#45b7aa',fields:['Statement By','Taken By','Date/Time','Location']},evidence:{name:'Evidence',icon:'🔍',color:'#3fb950',fields:['Tag #','Found At','Collected By']},vehicle:{name:'Vehicle',icon:'🚗',color:'#8957e5',fields:['License Plate','State','Make/Model','Color','Owner']},weapon:{name:'Weapon',icon:'🔫',color:'#da3633',fields:['Type','Caliber','Serial #']},location:{name:'Location',icon:'📍',color:'#58a6ff',fields:['Address','Type','District']},timeline:{name:'Timeline',icon:'🕐',color:'#a371f7',fields:['Date','Time']},phone:{name:'Phone',icon:'📱',color:'#39c5cf',fields:['Phone #','Owner']},document:{name:'Document',icon:'📄',color:'#768390',fields:['Doc Type','Reference']},organization:{name:'Organization',icon:'🏢',color:'#c9a227',fields:['Type','Members','Territory']},stickynote:{name:'Sticky Note',icon:'📌',color:'#e3b341',fields:[]},note:{name:'Note',icon:'📝',color:'#6e7681',fields:[]}};
+var CONNECTION_COLORS={red:'#f85149',orange:'#d29922',yellow:'#e3b341',green:'#3fb950',blue:'#58a6ff',purple:'#a371f7',pink:'#db61a2',gray:'#6e7681'};
+var SNAP_DISTANCE=120;
+var renderConnectionsScheduled=false;
+function scheduleRenderConnections(){
+  if(renderConnectionsScheduled)return;
+  renderConnectionsScheduled=true;
+  requestAnimationFrame(function(){
+    renderConnectionsScheduled=false;
+    renderConnections();
+  });
+}
+
+function getPinCenter(pin){
+  var w=160,h=60; // default medium
+  if(pin.size==='small'){w=130;h=50;}
+  else if(pin.size==='large'){w=200;h=70;}
+  return {x:pin.x+w/2,y:pin.y+h};
+}
+
+var editingPinId=null,editingConnIdx=null,currentStatementPin=null,editingCaseField=null;
+var branchFrom={active:false,x:0,y:0};
+
+var state={caseNumber:'#2024-0001',caseTitle:'New Investigation',pins:[],connections:[],mapMarkers:[],mapConnections:[],mapZones:[],nextId:1,nextMarkerId:1,nextZoneId:1,selectedPin:null,connectingFrom:null,connColor:'red',connStyle:'solid',ownerId:null,shareEnabled:false,sharePermission:'view'};
+var board={x:0,y:0,zoom:1,panning:false,sx:0,sy:0};
+var mapBoard={x:0,y:0,zoom:0.5,panning:false,sx:0,sy:0};
+var activeTab='board';
+var selectedMarker=null;
+var editingMarkerId=null;
+var markerClickPos={x:0,y:0};
+var mapConnectingFrom=null;
+var MAP_WIDTH=8192;
+var MAP_HEIGHT=8192;
+var mapInitialized=false;
+
+// Zone drawing state
+var zoneDrawing={active:false,points:[],color:'#22c55e'};
+var selectedZone=null;
+var hideMapLabels=false;
+var hidePinLabels=false;
+var editingZoneId=null;
+
+function initMapSize(){
+  var img=document.getElementById('mapImage');
+  if(img.naturalWidth){
+    MAP_WIDTH=img.naturalWidth;
+    MAP_HEIGHT=img.naturalHeight;
+    var mapEl=document.getElementById('mapBoard');
+    mapEl.style.width=MAP_WIDTH+'px';
+    mapEl.style.height=MAP_HEIGHT+'px';
+    // Reset map view if on map tab
+    if(activeTab==='map'){
+      mapInitialized=false;
+      switchTab('map');
+    }
+  }
+}
+
+var MARKER_TYPES={
+  location:{icon:'📍',color:'#58a6ff',name:'Location'},
+  crime:{icon:'🔴',color:'#f85149',name:'Crime Scene'},
+  witness:{icon:'👁️',color:'#a371f7',name:'Witness Location'},
+  suspect:{icon:'🎯',color:'#f0883e',name:'Suspect Sighting'},
+  evidence:{icon:'📦',color:'#3fb950',name:'Evidence Found'},
+  vehicle:{icon:'🚗',color:'#79c0ff',name:'Vehicle Location'},
+  camera:{icon:'📹',color:'#d29922',name:'Camera/CCTV'},
+  poi:{icon:'⭐',color:'#e3b341',name:'Point of Interest'},
+  safe:{icon:'🏠',color:'#56d364',name:'Safe House'},
+  danger:{icon:'⚠️',color:'#da3633',name:'Danger Zone'},
+  // New markers
+  police:{icon:'🚔',color:'#3d85c6',name:'Police Station'},
+  fire:{icon:'🚒',color:'#ff6b35',name:'Fire Station'},
+  hospital:{icon:'🏥',color:'#ff4757',name:'Hospital/Medical'},
+  arrest:{icon:'🚨',color:'#ff3838',name:'Arrest Location'},
+  death:{icon:'💀',color:'#2f3542',name:'Body Found/Fatality'},
+  drugs:{icon:'💊',color:'#9c88ff',name:'Drug Activity'},
+  gang:{icon:'👥',color:'#e17055',name:'Gang Territory'},
+  weapon:{icon:'🔫',color:'#636e72',name:'Weapon Found'},
+  money:{icon:'💰',color:'#2ed573',name:'Financial/Money Trail'},
+  phone:{icon:'📱',color:'#1e90ff',name:'Phone Ping'},
+  meeting:{icon:'🤝',color:'#ffa502',name:'Meeting Point'},
+  hideout:{icon:'🏚️',color:'#747d8c',name:'Hideout/Stash'},
+  business:{icon:'🏢',color:'#57606f',name:'Business'},
+  residence:{icon:'🏡',color:'#70a1ff',name:'Residence'},
+  parking:{icon:'🅿️',color:'#5352ed',name:'Parking/Storage'},
+  route:{icon:'➡️',color:'#ff9ff3',name:'Route Point'},
+  checkpoint:{icon:'🛑',color:'#ee5a24',name:'Checkpoint'},
+  informant:{icon:'🤫',color:'#10ac84',name:'Informant'},
+  victim:{icon:'💔',color:'#db61a2',name:'Victim Location'},
+  store:{icon:'🏪',color:'#00d2d3',name:'Store/Shop'},
+  bar:{icon:'🍺',color:'#c8aa6e',name:'Bar/Club'},
+  atm:{icon:'🏧',color:'#00b894',name:'ATM'},
+  gas:{icon:'⛽',color:'#fdcb6e',name:'Gas Station'},
+  school:{icon:'🏫',color:'#74b9ff',name:'School'},
+  court:{icon:'⚖️',color:'#b2bec3',name:'Court/Legal'},
+  prison:{icon:'🔒',color:'#4b4b4b',name:'Prison/Jail'},
+  border:{icon:'🚧',color:'#f39c12',name:'Border/Boundary'},
+  water:{icon:'🌊',color:'#0984e3',name:'Water/Dock'},
+  airport:{icon:'✈️',color:'#6c5ce7',name:'Airport'},
+  train:{icon:'🚂',color:'#a29bfe',name:'Train Station'}
+};
+var sidebarOpen=true,minimapOpen=true;
+var boardEl,boardContainer,pinsContainer,connectionsLayer;
+var contextMenu,pinContextMenu;
+var contextMenuPos = {x: 0, y: 0, useCustomPos: false};
+var contextMenuPinId = null;
+var drag={active:false,id:null,sx:0,sy:0,px:0,py:0};
+var rotate={active:false,id:null,lastAngle:0,totalRotation:0};
+
+function startRotatePin(e,id){
+  if(!canEdit)return;
+  var pin=state.pins.find(function(p){return p.id===id;});
+  if(!pin)return;
+  var pinEl=document.querySelector('.pin[data-id="'+id+'"]');
+  var rect=pinEl.getBoundingClientRect();
+  var cx=rect.left+rect.width/2;
+  var cy=rect.top+rect.height/2;
+  rotate.active=true;
+  rotate.id=id;
+  rotate.cx=cx;
+  rotate.cy=cy;
+  rotate.lastAngle=Math.atan2(e.clientY-cy,e.clientX-cx);
+  rotate.totalRotation=pin.rotation||0;
+}
+
+// Get/create user ID
+function getUserId(){
+  var id=localStorage.getItem('caseBoard_userId');
+  if(!id){id='user_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);localStorage.setItem('caseBoard_userId',id);}
+  return id;
+}
+
+// ============================================
+// INIT
+// ============================================
+document.addEventListener('DOMContentLoaded',function(){
+  initAgency();
+  
+  boardEl=document.getElementById('board');
+  boardContainer=document.getElementById('boardContainer');
+  pinsContainer=document.getElementById('pinsContainer');
+  connectionsLayer=document.getElementById('connectionsLayer');
+  
+  userId=getUserId();
+  renderSidebar();
+  setupEvents();
+  
+  // Center the board on the middle (4000,4000 is center of 8000x8000 board)
+  board.x = boardContainer.clientWidth/2 - 4000;
+  board.y = boardContainer.clientHeight/2 - 4000;
+  updateBoard();
+  
+  var urlParams=new URLSearchParams(window.location.search);
+  var caseId=urlParams.get('case');
+  
+  if(caseId){
+    loadCase(caseId);
+  }else{
+    loadMyCases();
+  }
+});
+
+function hideLoading(){document.getElementById('loadingScreen').classList.add('hidden');}
+
+// ============================================
+// STORAGE - localStorage
+// ============================================
+var STORAGE_KEY='caseboard_data';
+
+function storageGet(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{"cases":{}}');}
+  catch(e){return{cases:{}};}
+}
+
+function storageSet(data){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}
+  catch(e){showToast('Storage full — try deleting old cases');}
+}
+
+function generateId(){
+  return Math.random().toString(36).substr(2,9)+Math.random().toString(36).substr(2,9);
+}
+
+function loadCase(caseId){
+  var store=storageGet();
+  var data=store.cases[caseId];
+  if(!data){showToast('Case not found');loadMyCases();return;}
+  hideLoading();
+  currentCaseId=caseId;
+  isOwner=true;
+  canEdit=true;
+  applyState(Object.assign({id:caseId},data));
+}
+
+function loadMyCases(){
+  var store=storageGet();
+  var ids=Object.keys(store.cases);
+  hideLoading();
+  if(ids.length===0){
+    createNewCase();
+  }else{
+    loadCase(ids[ids.length-1]);
+  }
+}
+
+function saveCase(){
+  if(!canEdit){showToast('View only');return;}
+  showSaveIndicator('saving');
+  var store=storageGet();
+  if(!store.cases[currentCaseId])store.cases[currentCaseId]={};
+  var c=store.cases[currentCaseId];
+  c.ownerId=userId;
+  c.caseNumber=state.caseNumber;
+  c.caseTitle=state.caseTitle;
+  c.pins=state.pins;
+  c.connections=state.connections;
+  c.mapMarkers=state.mapMarkers;
+  c.mapConnections=state.mapConnections;
+  c.mapZones=state.mapZones;
+  c.nextId=state.nextId;
+  c.nextMarkerId=state.nextMarkerId;
+  c.nextZoneId=state.nextZoneId;
+  c.shareEnabled=state.shareEnabled;
+  c.sharePermission=state.sharePermission;
+  c.updatedAt=Date.now();
+  storageSet(store);
+  showSaveIndicator('saved');
+}
+
+function createNewCase(){
+  var id=generateId();
+  var caseNumber='#'+new Date().getFullYear()+'-'+Math.floor(Math.random()*9000+1000);
+  var store=storageGet();
+  store.cases[id]={
+    ownerId:userId,
+    caseNumber:caseNumber,
+    caseTitle:'New Investigation',
+    pins:[],connections:[],mapMarkers:[],mapConnections:[],mapZones:[],
+    nextId:1,nextMarkerId:1,nextZoneId:1,
+    shareEnabled:false,sharePermission:'view',
+    createdAt:Date.now(),updatedAt:Date.now()
+  };
+  storageSet(store);
+  currentCaseId=id;
+  isOwner=true;
+  canEdit=true;
+  state={caseNumber:caseNumber,caseTitle:'New Investigation',pins:[],connections:[],mapMarkers:[],mapConnections:[],mapZones:[],nextId:1,nextMarkerId:1,nextZoneId:1,selectedPin:null,connectingFrom:null,connColor:'red',connStyle:'solid',ownerId:userId,shareEnabled:false,sharePermission:'view'};
+  applyState(state);
+  showToast('New case created');
+  closeCasesModal();
+}
+
+// ============================================
+// SHARE
+// ============================================
+document.getElementById('shareBtn').onclick=function(){
+  if(!isOwner){showToast('Only owner can manage sharing');return;}
+  var shareUrl=window.location.origin+'/?case='+currentCaseId;
+  document.getElementById('shareLinkInput').value=shareUrl;
+  document.getElementById('shareEnabledCheck').checked=state.shareEnabled;
+  document.querySelectorAll('.share-permission-item').forEach(function(item){
+    item.classList.toggle('selected',item.dataset.permission===state.sharePermission);
+  });
+  document.getElementById('shareModal').classList.add('open');
+};
+
+document.getElementById('copyLinkBtn').onclick=function(){
+  var input=document.getElementById('shareLinkInput');
+  input.select();
+  document.execCommand('copy');
+  showToast('Link copied!');
+};
+
+document.querySelectorAll('.share-permission-item').forEach(function(item){
+  item.onclick=function(){
+    document.querySelectorAll('.share-permission-item').forEach(function(i){i.classList.remove('selected');});
+    this.classList.add('selected');
+    state.sharePermission=this.dataset.permission;
+    saveCase();
+  };
+});
+
+document.getElementById('shareEnabledCheck').onchange=function(){
+  state.shareEnabled=this.checked;
+  saveCase();
+};
+
+document.getElementById('closeShareBtn').onclick=function(){document.getElementById('shareModal').classList.remove('open');};
+document.getElementById('closeShareBtn2').onclick=function(){document.getElementById('shareModal').classList.remove('open');};
+
+// ============================================
+// MY CASES
+// ============================================
+document.getElementById('myCasesBtn').onclick=function(){
+  var store=storageGet();
+  var cases=Object.entries(store.cases)
+    .filter(function(e){return e[1].ownerId===userId;})
+    .map(function(e){return{id:e[0],caseNumber:e[1].caseNumber,caseTitle:e[1].caseTitle,pinCount:(e[1].pins||[]).length,updatedAt:e[1].updatedAt};})
+    .sort(function(a,b){return(b.updatedAt||0)-(a.updatedAt||0);});
+  var html='';
+  if(cases.length===0){
+    html='<div style="text-align:center;padding:40px;color:var(--text-muted);">No cases yet</div>';
+  }else{
+    cases.forEach(function(c){
+      var isActive=c.id===currentCaseId;
+      html+='<div class="case-item" data-id="'+c.id+'" style="display:flex;align-items:center;padding:12px;border-bottom:1px solid var(--border);cursor:pointer;'+(isActive?'background:rgba(88,166,255,0.1);':'')+'"><div style="flex:1;"><div style="font-weight:500;">'+esc(c.caseTitle)+'</div><div style="font-size:0.75rem;color:var(--text-muted);">'+c.caseNumber+' • '+c.pinCount+' pins</div></div><button class="btn btn-danger" style="padding:4px 8px;font-size:0.7rem;" data-delete="'+c.id+'">🗑️</button></div>';
+    });
+  }
+  document.getElementById('casesList').innerHTML=html;
+  document.querySelectorAll('.case-item').forEach(function(item){
+    item.onclick=function(e){
+      if(e.target.dataset.delete){
+        e.stopPropagation();
+        if(confirm('Delete this case permanently?')){
+          var s=storageGet();delete s.cases[e.target.dataset.delete];storageSet(s);
+          showToast('Deleted');
+          if(e.target.dataset.delete===currentCaseId)loadMyCases();
+          else document.getElementById('myCasesBtn').click();
+        }
+        return;
+      }
+      loadCase(item.dataset.id);
+      closeCasesModal();
+    };
+  });
+  document.getElementById('casesModal').classList.add('open');
+};
+
+document.getElementById('closeCasesBtn').onclick=closeCasesModal;
+document.getElementById('newCaseBtn').onclick=createNewCase;
+document.getElementById('newCaseBtn2').onclick=createNewCase;
+function closeCasesModal(){document.getElementById('casesModal').classList.remove('open');}
+
+// ============================================
+// PROFILE (Multi-Profile System)
+// ============================================
+var profiles = [];
+var activeProfileId = null;
+
+function generateProfileId(){
+  return 'profile_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+}
+
+function loadProfiles(){
+  try{
+    var saved = localStorage.getItem('caseBoard_profiles');
+    if(saved){
+      var data = JSON.parse(saved);
+      profiles = data.profiles || [];
+      activeProfileId = data.activeProfileId || null;
+    }
+    // Migration from old single profile
+    if(profiles.length === 0){
+      var oldProfile = localStorage.getItem('caseBoard_profile');
+      if(oldProfile){
+        var old = JSON.parse(oldProfile);
+        if(old.name || old.rank || old.badge){
+          var newId = generateProfileId();
+          profiles.push({id: newId, name: old.name||'', rank: old.rank||'', badge: old.badge||''});
+          activeProfileId = newId;
+          saveProfiles();
+          localStorage.removeItem('caseBoard_profile');
+        }
+      }
+    }
+  }catch(e){console.error('Error loading profiles:',e);}
+  updateProfileButton();
+}
+
+function saveProfiles(){
+  localStorage.setItem('caseBoard_profiles', JSON.stringify({profiles: profiles, activeProfileId: activeProfileId}));
+  updateProfileButton();
+}
+
+function getActiveProfile(){
+  if(!activeProfileId) return null;
+  return profiles.find(function(p){return p.id === activeProfileId;}) || null;
+}
+
+function updateProfileButton(){
+  var btn = document.getElementById('profileBtn');
+  var profile = getActiveProfile();
+  if(profile && (profile.name || profile.rank || profile.badge)){
+    var display = profile.rank ? (profile.rank + (profile.name ? ' ' + profile.name : '')) : profile.name || 'Badge #' + profile.badge;
+    btn.textContent = '👤 ' + display;
+    btn.style.background = 'var(--accent-blue)';
+    btn.style.borderColor = 'var(--accent-blue)';
+    btn.style.color = 'white';
+  }else{
+    btn.textContent = '👤 Profile';
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
+}
+
+function getProfileString(){
+  var profile = getActiveProfile();
+  if(!profile || (!profile.name && !profile.rank && !profile.badge)) return null;
+  var parts = [];
+  if(profile.rank) parts.push(profile.rank);
+  if(profile.name) parts.push(profile.name);
+  if(profile.badge) parts.push('#' + profile.badge);
+  return parts.join(' ');
+}
+
+function updateProfilePreview(){
+  var name = document.getElementById('profileNameInput').value.trim();
+  var rank = document.getElementById('profileRankInput').value.trim();
+  var badge = document.getElementById('profileBadgeInput').value.trim();
+  var preview = document.getElementById('profilePreview');
+  var previewText = document.getElementById('profilePreviewText');
+  if(name || rank || badge){
+    var parts = [];
+    if(rank) parts.push(rank);
+    if(name) parts.push(name);
+    if(badge) parts.push('#' + badge);
+    previewText.textContent = parts.join(' ');
+    preview.style.display = 'block';
+  }else{
+    preview.style.display = 'none';
+  }
+}
+
+function renderProfileSelector(){
+  var selector = document.getElementById('profileSelector');
+  var html = '';
+  if(profiles.length === 0){
+    html = '<option value="">No profiles - create one!</option>';
+  }else{
+    profiles.forEach(function(p){
+      var label = p.rank ? (p.rank + (p.name ? ' ' + p.name : '')) : p.name || 'Badge #' + p.badge || 'Unnamed';
+      var selected = p.id === activeProfileId ? ' selected' : '';
+      html += '<option value="' + p.id + '"' + selected + '>' + esc(label) + '</option>';
+    });
+  }
+  selector.innerHTML = html;
+}
+
+function loadProfileIntoForm(profileId){
+  var profile = profiles.find(function(p){return p.id === profileId;});
+  if(profile){
+    document.getElementById('profileNameInput').value = profile.name || '';
+    document.getElementById('profileRankInput').value = profile.rank || '';
+    document.getElementById('profileBadgeInput').value = profile.badge || '';
+  }else{
+    document.getElementById('profileNameInput').value = '';
+    document.getElementById('profileRankInput').value = '';
+    document.getElementById('profileBadgeInput').value = '';
+  }
+  updateProfilePreview();
+}
+
+document.getElementById('profileBtn').onclick = function(){
+  renderProfileSelector();
+  loadProfileIntoForm(activeProfileId);
+  document.getElementById('currentAgencyName').textContent = currentAgency ? currentAgency.name : 'Not Selected';
+  document.getElementById('profileModal').classList.add('open');
+};
+
+document.getElementById('profileSelector').onchange = function(){
+  var newId = this.value;
+  if(newId){
+    activeProfileId = newId;
+    loadProfileIntoForm(newId);
+    saveProfiles();
+  }
+};
+
+document.getElementById('newProfileBtn').onclick = function(){
+  var newId = generateProfileId();
+  profiles.push({id: newId, name: '', rank: '', badge: ''});
+  activeProfileId = newId;
+  saveProfiles();
+  renderProfileSelector();
+  loadProfileIntoForm(newId);
+  document.getElementById('profileNameInput').focus();
+  showToast('New profile created!');
+};
+
+document.getElementById('deleteProfileBtn').onclick = function(){
+  if(!activeProfileId){
+    showToast('No profile to delete');
+    return;
+  }
+  var profile = getActiveProfile();
+  var label = profile ? (profile.rank ? profile.rank + ' ' + (profile.name||'') : profile.name || 'this profile') : 'this profile';
+  if(!confirm('Delete "' + label.trim() + '"?')) return;
+  profiles = profiles.filter(function(p){return p.id !== activeProfileId;});
+  activeProfileId = profiles.length > 0 ? profiles[0].id : null;
+  saveProfiles();
+  renderProfileSelector();
+  loadProfileIntoForm(activeProfileId);
+  showToast('Profile deleted');
+};
+
+document.getElementById('profileNameInput').oninput = updateProfilePreview;
+document.getElementById('profileRankInput').oninput = updateProfilePreview;
+document.getElementById('profileBadgeInput').oninput = updateProfilePreview;
+
+document.getElementById('closeProfileBtn').onclick = function(){document.getElementById('profileModal').classList.remove('open');};
+document.getElementById('cancelProfileBtn').onclick = function(){document.getElementById('profileModal').classList.remove('open');};
+
+document.getElementById('saveProfileBtn').onclick = function(){
+  if(!activeProfileId){
+    // Create new profile if none exists
+    var newId = generateProfileId();
+    profiles.push({id: newId, name: '', rank: '', badge: ''});
+    activeProfileId = newId;
+  }
+  var profile = getActiveProfile();
+  if(profile){
+    profile.name = document.getElementById('profileNameInput').value.trim();
+    profile.rank = document.getElementById('profileRankInput').value.trim();
+    profile.badge = document.getElementById('profileBadgeInput').value.trim();
+  }
+  saveProfiles();
+  document.getElementById('profileModal').classList.remove('open');
+  showToast('Profile saved!');
+};
+
+var changeAgencyBtn = document.getElementById('changeAgencyBtn');
+if (changeAgencyBtn) {
+  changeAgencyBtn.onclick = function(){
+    document.getElementById('profileModal').classList.remove('open');
+    localStorage.removeItem('caseBoard_agency');
+    showAgencySelection();
+  };
+}
+
+// Load profiles on startup
+loadProfiles();
+
+// ============================================
+// RENDER
+// ============================================
+function renderSidebar(){
+  var h='';for(var k in PIN_TYPES){var t=PIN_TYPES[k];h+='<div class="pin-type-item"><div class="pin-type-dot" style="background:'+t.color+'"></div><span class="pin-type-name">'+t.icon+' '+t.name+'</span><span class="pin-type-count" id="count-'+k+'">0</span></div>';}
+  document.getElementById('pinTypesList').innerHTML=h;
+  h='';for(var c in CONNECTION_COLORS){h+='<div class="connection-color-item'+(state.connColor===c?' selected':'')+'" data-color="'+c+'"><div class="connection-line-preview" style="background:'+CONNECTION_COLORS[c]+'"></div><span class="connection-color-name">'+c.charAt(0).toUpperCase()+c.slice(1)+'</span></div>';}
+  document.getElementById('connectionColors').innerHTML=h;
+  h='';for(var k in PIN_TYPES){h+='<option value="'+k+'">'+PIN_TYPES[k].icon+' '+PIN_TYPES[k].name+'</option>';}
+  document.getElementById('pinTypeSelect').innerHTML=h;
+  h='';for(var c in CONNECTION_COLORS){h+='<option value="'+c+'">'+c.charAt(0).toUpperCase()+c.slice(1)+'</option>';}
+  document.getElementById('connColorSelect').innerHTML=h;
+}
+
+function render(){renderPins();renderConnections();updateStats();updateMinimap();}
+
+function renderPins(){
+  var h='';
+  state.pins.forEach(function(pin){
+    var type=PIN_TYPES[pin.type]||PIN_TYPES.note,selected=state.selectedPin===pin.id,sizeClass='size-'+(pin.size||'medium');
+    var isSticky=pin.type==='stickynote';
+    var rotation=pin.rotation||0;
+    var fh='';if(pin.fields){for(var k in pin.fields){if(pin.fields[k])fh+='<div class="pin-field"><span class="pin-field-label">'+k+':</span><span class="pin-field-value">'+esc(pin.fields[k])+'</span></div>';}}if(fh)fh='<div class="pin-fields">'+fh+'</div>';
+    var ch='',isLong=pin.content&&pin.content.length>100;
+    if(isSticky&&pin.content){
+      var todos=pin.todos||{};
+      var lines=pin.content.split('\n').filter(function(l){return l.trim();});
+      ch='<ul class="todo-list">';
+      lines.forEach(function(line,i){
+        var checked=todos[i]?'checked':'';
+        var doneClass=todos[i]?'done':'';
+        ch+='<li class="todo-item '+doneClass+'"><input type="checkbox" '+checked+' data-pin="'+pin.id+'" data-idx="'+i+'"><span>'+esc(line.trim())+'</span></li>';
+      });
+      ch+='</ul>';
+    }else if((pin.type==='statement'||pin.type==='officer')&&isLong){ch='<div class="pin-content pin-content-preview">'+esc(pin.content)+'</div><span class="pin-read-more" data-id="'+pin.id+'">Read Full Statement →</span>';}else if(pin.content){ch='<div class="pin-content">'+esc(pin.content)+'</div>';}
+    var cc=state.connections.filter(function(c){return c.from===pin.id||c.to===pin.id;}).length;
+    var authorInfo='';if(pin.createdBy)authorInfo='<span class="pin-meta-item">✍️ '+esc(pin.createdBy)+'</span>';
+    h+='<div class="pin '+(selected?'selected':'')+' '+sizeClass+(isSticky?' sticky':'')+'" style="left:'+pin.x+'px;top:'+pin.y+'px;transform:rotate('+rotation+'deg);" data-id="'+pin.id+'" title="'+(hidePinLabels?esc(pin.title):'')+'"><div class="pin-rotate-handle" data-rotate="'+pin.id+'">🔄</div><div class="pin-card"><div class="pin-header"><div class="pin-type-indicator" style="background:'+type.color+'"></div><div class="pin-header-content">'+(hidePinLabels?'':'<div class="pin-title">'+esc(pin.title)+'</div>')+'<div class="pin-type-label" style="color:'+type.color+'">'+type.icon+' '+type.name+'</div>'+(pin.subtitle&&!hidePinLabels?'<div class="pin-subtitle">'+esc(pin.subtitle)+'</div>':'')+'</div></div>'+(pin.image?'<img src="'+pin.image+'" class="pin-image" onerror="this.style.display=\'none\'">':'')+'<div class="pin-body">'+ch+fh+'<div class="pin-meta"><span class="pin-meta-item">📅 '+formatDate(pin.created)+'</span><span class="pin-meta-item">🔗 '+cc+'</span>'+authorInfo+(pin.priority==='high'||pin.priority==='critical'?'<span class="pin-meta-item" style="color:var(--accent-red)">⚠️</span>':'')+'</div></div><div class="pin-actions"><button class="pin-btn" data-action="edit" data-id="'+pin.id+'">✏️</button><button class="pin-btn" data-action="dupe" data-id="'+pin.id+'">📋</button><button class="pin-btn danger" data-action="delete" data-id="'+pin.id+'">🗑️</button></div></div></div>';
+  });
+  pinsContainer.innerHTML=h;
+  pinsContainer.querySelectorAll('.pin').forEach(function(el){
+    var id=parseInt(el.dataset.id);
+    el.addEventListener('mousedown',function(e){if(e.target.closest('.pin-btn')||e.target.closest('.pin-read-more')||e.target.closest('.pin-rotate-handle')||e.target.type==='checkbox')return;startDragPin(e,id);});
+    el.addEventListener('click',function(e){if(e.target.closest('.pin-btn')||e.target.closest('.pin-read-more')||e.target.closest('.pin-rotate-handle')||e.target.type==='checkbox')return;selectPin(id);});
+    el.addEventListener('dblclick',function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if(!canEdit){showToast('View only');return;}
+      state.connectingFrom=id;
+      document.getElementById('connectHint').textContent='Click another pin to connect';
+      document.getElementById('connectHint').classList.add('show');
+      document.getElementById('connectBtn').classList.add('active');
+      showToast('Double-clicked! Click another pin to connect');
+    });
+    el.addEventListener('contextmenu',function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      contextMenuPinId=id;
+      contextMenu.classList.remove('show');
+      pinContextMenu.classList.remove('show');
+      var menuX=e.clientX;
+      var menuY=e.clientY;
+      if(menuX+150>window.innerWidth)menuX=window.innerWidth-160;
+      if(menuY+180>window.innerHeight)menuY=window.innerHeight-190;
+      pinContextMenu.style.left=menuX+'px';
+      pinContextMenu.style.top=menuY+'px';
+      pinContextMenu.classList.add('show');
+      return false;
+    });
+  });
+  pinsContainer.querySelectorAll('.pin-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();var id=parseInt(this.dataset.id),action=this.dataset.action;if(action==='edit')editPin(id);if(action==='dupe')dupePin(id);if(action==='delete')deletePin(id);});
+  });
+  pinsContainer.querySelectorAll('.pin-read-more').forEach(function(link){
+    link.addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openStatementModal(parseInt(this.dataset.id));});
+  });
+  pinsContainer.querySelectorAll('.todo-item input[type="checkbox"]').forEach(function(cb){
+    cb.addEventListener('change',function(e){
+      e.stopPropagation();
+      var pinId=parseInt(this.dataset.pin);
+      var idx=parseInt(this.dataset.idx);
+      var pin=state.pins.find(function(p){return p.id===pinId;});
+      if(pin){
+        if(!pin.todos)pin.todos={};
+        pin.todos[idx]=this.checked;
+        saveCase();
+        render();
+      }
+    });
+  });
+  pinsContainer.querySelectorAll('.pin-rotate-handle').forEach(function(handle){
+    handle.addEventListener('mousedown',function(e){
+      e.stopPropagation();
+      e.preventDefault();
+      if(!canEdit){showToast('View only');return;}
+      var pinId=parseInt(this.dataset.rotate);
+      startRotatePin(e,pinId);
+    });
+    handle.addEventListener('dblclick',function(e){
+      e.stopPropagation();
+      e.preventDefault();
+      if(!canEdit){showToast('View only');return;}
+      var pinId=parseInt(this.dataset.rotate);
+      var pin=state.pins.find(function(p){return p.id===pinId;});
+      if(pin){
+        pin.rotation=0;
+        saveCase();
+        render();
+        showToast('Rotation reset');
+      }
+    });
+  });
+}
+
+function findNearestPin(x,y,excludeId){var nearest=null,minDist=SNAP_DISTANCE;state.pins.forEach(function(pin){if(excludeId&&pin.id===excludeId)return;var c=getPinCenter(pin);var dist=Math.sqrt((x-c.x)*(x-c.x)+(y-c.y)*(y-c.y));if(dist<minDist){minDist=dist;nearest=pin;}});return nearest;}
+function clearSnapHighlight(){document.querySelectorAll('.pin.snap-target').forEach(function(el){el.classList.remove('snap-target');});}
+function showSnapHighlight(pinId){if(pinId){var el=document.querySelector('.pin[data-id="'+pinId+'"]');if(el)el.classList.add('snap-target');}}
+
+function getLinePoints(conn){var fromPin=conn.from?state.pins.find(function(p){return p.id===conn.from;}):null;var toPin=conn.to?state.pins.find(function(p){return p.id===conn.to;}):null;var x1=conn.x1,y1=conn.y1,x2=conn.x2,y2=conn.y2;if(fromPin){var c1=getPinCenter(fromPin);x1=c1.x;y1=c1.y;}if(toPin){var c2=getPinCenter(toPin);x2=c2.x;y2=c2.y;}if(x1===undefined)x1=4000;if(y1===undefined)y1=4000;if(x2===undefined)x2=x1+100;if(y2===undefined)y2=y1;return{x1:x1,y1:y1,x2:x2,y2:y2};}
+
+function renderConnections(){
+  connectionsLayer.innerHTML='';
+  state.connections.forEach(function(conn,idx){
+    var pts=getLinePoints(conn);var x1=pts.x1,y1=pts.y1,x2=pts.x2,y2=pts.y2;
+    var dx=x2-x1,dy=y2-y1;var length=Math.max(1,Math.sqrt(dx*dx+dy*dy));var angle=Math.atan2(dy,dx)*180/Math.PI;
+    var midX=(x1+x2)/2,midY=(y1+y2)/2;var color=CONNECTION_COLORS[conn.color]||CONNECTION_COLORS.red;var style=conn.style||'solid';
+    
+    var w=document.createElement('div');w.className='connection-wrapper';
+    var hitbox=document.createElement('div');hitbox.className='connection-hitbox';hitbox.style.cssText='left:'+x1+'px;top:'+y1+'px;width:'+length+'px;transform:rotate('+angle+'deg)';
+    var line=document.createElement('div');line.className='connection-line '+style;line.style.cssText='width:'+length+'px;color:'+color;hitbox.appendChild(line);
+    
+    var isAttached=conn.from||conn.to;var isLocked=isAttached&&conn.locked!==false;hitbox.style.cursor=isLocked?'pointer':'grab';
+    
+    (function(conn,idx,ox1,oy1,ox2,oy2,isLocked){
+      var startX,startY,dragging=false,moved=false;
+      hitbox.addEventListener('mousedown',function(e){
+        e.stopPropagation();e.preventDefault();
+        // If in connecting mode, check if we should connect to a nearby pin
+        if(state.connectingFrom){
+          var rect=boardContainer.getBoundingClientRect();
+          var clickX=(e.clientX-rect.left-board.x)/board.zoom;
+          var clickY=(e.clientY-rect.top-board.y)/board.zoom;
+          var nearPin=findNearestPin(clickX,clickY,state.connectingFrom);
+          if(nearPin){
+            selectPin(nearPin.id);
+            return;
+          }
+        }
+        if(isLocked||!canEdit){openConnModal(idx);return;}
+        startX=e.clientX;startY=e.clientY;dragging=true;moved=false;
+        function onMove(ev){
+          var mx=ev.clientX-startX,my=ev.clientY-startY;
+          if(Math.abs(mx)>3||Math.abs(my)>3)moved=true;
+          if(!moved)return;
+          var ddx=mx/board.zoom,ddy=my/board.zoom;
+          if(conn.from){conn.from=null;}if(conn.to){conn.to=null;}
+          conn.x1=ox1+ddx;conn.y1=oy1+ddy;conn.x2=ox2+ddx;conn.y2=oy2+ddy;
+          clearSnapHighlight();
+          var snap1=findNearestPin(conn.x1,conn.y1,null);var snap2=findNearestPin(conn.x2,conn.y2,snap1?snap1.id:null);
+          if(snap1)showSnapHighlight(snap1.id);if(snap2)showSnapHighlight(snap2.id);
+          scheduleRenderConnections();
+        }
+        function onUp(){
+          document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
+          dragging=false;
+          if(moved){
+            var snap1=findNearestPin(conn.x1,conn.y1,null);var snap2=findNearestPin(conn.x2,conn.y2,snap1?snap1.id:null);
+            if(snap1){conn.from=snap1.id;delete conn.x1;delete conn.y1;}
+            if(snap2){conn.to=snap2.id;delete conn.x2;delete conn.y2;}
+            clearSnapHighlight();saveCase();render();
+          }else{openConnModal(idx);}
+        }
+        document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+      });
+    })(conn,idx,x1,y1,x2,y2,isLocked);
+    
+    w.appendChild(hitbox);
+    
+    var h1=document.createElement('div');h1.className='connection-handle';h1.style.cssText='left:'+x1+'px;top:'+y1+'px;color:'+color+(isLocked&&conn.from?';opacity:0.5;cursor:not-allowed':'');
+    (function(conn,locked,idx){
+      h1.addEventListener('mousedown',function(e){
+        e.stopPropagation();e.preventDefault();
+        // If in connecting mode, complete connection to the pin this handle is attached to
+        if(state.connectingFrom && conn.from && state.connectingFrom !== conn.from){
+          selectPin(conn.from);
+          return;
+        }
+        if((locked&&conn.from)||!canEdit){openConnModal(idx);return;}
+        if(conn.from){var p=state.pins.find(function(pp){return pp.id===conn.from;});if(p){var c=getPinCenter(p);conn.x1=c.x;conn.y1=c.y;}conn.from=null;}
+        function onMove(ev){var rect=boardContainer.getBoundingClientRect();conn.x1=(ev.clientX-rect.left-board.x)/board.zoom;conn.y1=(ev.clientY-rect.top-board.y)/board.zoom;var snap=findNearestPin(conn.x1,conn.y1,conn.to);clearSnapHighlight();showSnapHighlight(snap?snap.id:null);scheduleRenderConnections();}
+        function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);var snap=findNearestPin(conn.x1,conn.y1,conn.to);if(snap){conn.from=snap.id;delete conn.x1;delete conn.y1;}clearSnapHighlight();saveCase();render();}
+        document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+      });
+    })(conn,isLocked,idx);
+    w.appendChild(h1);
+    
+    var h2=document.createElement('div');h2.className='connection-handle';h2.style.cssText='left:'+x2+'px;top:'+y2+'px;color:'+color+(isLocked&&conn.to?';opacity:0.5;cursor:not-allowed':'');
+    (function(conn,locked,idx){
+      h2.addEventListener('mousedown',function(e){
+        e.stopPropagation();e.preventDefault();
+        // If in connecting mode, complete connection to the pin this handle is attached to
+        if(state.connectingFrom && conn.to && state.connectingFrom !== conn.to){
+          selectPin(conn.to);
+          return;
+        }
+        if((locked&&conn.to)||!canEdit){openConnModal(idx);return;}
+        if(conn.to){var p=state.pins.find(function(pp){return pp.id===conn.to;});if(p){var c=getPinCenter(p);conn.x2=c.x;conn.y2=c.y;}conn.to=null;}
+        function onMove(ev){var rect=boardContainer.getBoundingClientRect();conn.x2=(ev.clientX-rect.left-board.x)/board.zoom;conn.y2=(ev.clientY-rect.top-board.y)/board.zoom;var snap=findNearestPin(conn.x2,conn.y2,conn.from);clearSnapHighlight();showSnapHighlight(snap?snap.id:null);scheduleRenderConnections();}
+        function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);var snap=findNearestPin(conn.x2,conn.y2,conn.from);if(snap){conn.to=snap.id;delete conn.x2;delete conn.y2;}clearSnapHighlight();saveCase();render();}
+        document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+      });
+    })(conn,isLocked,idx);
+    w.appendChild(h2);
+    
+    if(conn.label){var lbl=document.createElement('div');lbl.className='connection-label';lbl.style.cssText='left:'+midX+'px;top:'+midY+'px';lbl.textContent=conn.label;lbl.addEventListener('click',function(e){e.stopPropagation();openConnModal(idx);});w.appendChild(lbl);}
+    connectionsLayer.appendChild(w);
+  });
+}
+
+// ============================================
+// EVENTS
+// ============================================
+// Map Board Functions
+function switchTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.header-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab);});
+  document.getElementById('boardContainer').classList.toggle('hidden',tab!=='board');
+  document.getElementById('mapContainer').classList.toggle('active',tab==='map');
+  document.getElementById('boardActions').style.display=tab==='board'?'flex':'none';
+  document.getElementById('mapActions').style.display=tab==='map'?'flex':'none';
+  document.getElementById('sidebar').style.display=tab==='board'?'flex':'none';
+  document.getElementById('sidebarToggle').style.display=tab==='board'?'flex':'none';
+  // Reset connect modes when switching
+  mapConnectingFrom=null;
+  document.getElementById('mapConnectBtn').classList.remove('active');
+  document.getElementById('connectHint').classList.remove('show');
+  if(tab==='map'){
+    var container=document.getElementById('mapContainer');
+    var mapEl=document.getElementById('mapBoard');
+    mapEl.style.width=MAP_WIDTH+'px';
+    mapEl.style.height=MAP_HEIGHT+'px';
+    // Always ensure zoom is at least minimum to fill viewport
+    var minZoom=getMinMapZoom();
+    if(!mapInitialized||mapBoard.zoom<minZoom){
+      mapBoard.zoom=minZoom;
+      mapBoard.x=(container.clientWidth-MAP_WIDTH*mapBoard.zoom)/2;
+      mapBoard.y=(container.clientHeight-MAP_HEIGHT*mapBoard.zoom)/2;
+      mapInitialized=true;
+    }
+    clampMapPosition();
+    renderMapZones();
+    renderMapMarkers();
+    renderMapConnections();
+    updateMapTransform();
+  }
+}
+
+function clampMapPosition(){
+  var container=document.getElementById('mapContainer');
+  var scaledW=MAP_WIDTH*mapBoard.zoom;
+  var scaledH=MAP_HEIGHT*mapBoard.zoom;
+  // Clamp X
+  if(scaledW<=container.clientWidth){
+    mapBoard.x=(container.clientWidth-scaledW)/2;
+  }else{
+    var maxX=0;
+    var minX=container.clientWidth-scaledW;
+    mapBoard.x=Math.min(maxX,Math.max(minX,mapBoard.x));
+  }
+  // Clamp Y
+  if(scaledH<=container.clientHeight){
+    mapBoard.y=(container.clientHeight-scaledH)/2;
+  }else{
+    var maxY=0;
+    var minY=container.clientHeight-scaledH;
+    mapBoard.y=Math.min(maxY,Math.max(minY,mapBoard.y));
+  }
+}
+
+function getMinMapZoom(){
+  var container=document.getElementById('mapContainer');
+  if(!container)return 0.5;
+  var scaleX=container.clientWidth/MAP_WIDTH;
+  var scaleY=container.clientHeight/MAP_HEIGHT;
+  return Math.max(scaleX,scaleY);
+}
+
+function renderMapConnections(){
+  var layer=document.getElementById('mapConnectionsLayer');
+  layer.innerHTML='';
+  (state.mapConnections||[]).forEach(function(conn,idx){
+    var fromMarker=conn.from?state.mapMarkers.find(function(m){return m.id===conn.from;}):null;
+    var toMarker=conn.to?state.mapMarkers.find(function(m){return m.id===conn.to;}):null;
+    var x1=conn.x1,y1=conn.y1,x2=conn.x2,y2=conn.y2;
+    var isFreeLine=!conn.from&&!conn.to;
+    if(fromMarker){x1=fromMarker.x;y1=fromMarker.y;}
+    if(toMarker){x2=toMarker.x;y2=toMarker.y;}
+    if(x1===undefined||y1===undefined||x2===undefined||y2===undefined)return;
+    var dx=x2-x1,dy=y2-y1;
+    var length=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+    var angle=Math.atan2(dy,dx)*180/Math.PI;
+    var color=CONNECTION_COLORS[conn.color]||CONNECTION_COLORS.red;
+    var style=conn.style||'solid';
+    
+    var hitbox=document.createElement('div');
+    hitbox.className='connection-hitbox';
+    hitbox.style.cssText='left:'+x1+'px;top:'+y1+'px;width:'+length+'px;transform:rotate('+angle+'deg);pointer-events:auto;';
+    var line=document.createElement('div');
+    line.className='connection-line '+style;
+    line.style.cssText='width:100%;color:'+color+';background:'+color+';';
+    if(style==='dashed')line.style.background='repeating-linear-gradient(90deg,'+color+' 0px,'+color+' 8px,transparent 8px,transparent 14px)';
+    if(style==='dotted')line.style.background='repeating-linear-gradient(90deg,'+color+' 0px,'+color+' 3px,transparent 3px,transparent 7px)';
+    hitbox.appendChild(line);
+    
+    // Free line drag - move whole line
+    if(isFreeLine&&canEdit){
+      hitbox.style.cursor='move';
+      hitbox.onmousedown=function(e){
+        if(e.button!==0)return;
+        e.stopPropagation();
+        var startX=e.clientX,startY=e.clientY;
+        var origX1=conn.x1,origY1=conn.y1,origX2=conn.x2,origY2=conn.y2;
+        function onMove(ev){
+          var dx=(ev.clientX-startX)/mapBoard.zoom;
+          var dy=(ev.clientY-startY)/mapBoard.zoom;
+          conn.x1=origX1+dx;conn.y1=origY1+dy;
+          conn.x2=origX2+dx;conn.y2=origY2+dy;
+          renderMapConnections();
+        }
+        function onUp(){
+          document.removeEventListener('mousemove',onMove);
+          document.removeEventListener('mouseup',onUp);
+          saveCase();
+        }
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      };
+    }
+    
+    hitbox.ondblclick=function(e){e.stopPropagation();openMapConnModal(idx);};
+    hitbox.oncontextmenu=function(e){e.preventDefault();e.stopPropagation();showMapConnContextMenu(e,idx);};
+    layer.appendChild(hitbox);
+    
+    // Free line endpoint handles
+    if(isFreeLine&&canEdit){
+      var handle1=document.createElement('div');
+      handle1.className='line-handle';
+      handle1.style.cssText='position:absolute;left:'+(x1-6)+'px;top:'+(y1-6)+'px;width:12px;height:12px;background:white;border:2px solid '+color+';border-radius:50%;cursor:pointer;pointer-events:auto;z-index:15;';
+      handle1.onmousedown=function(e){
+        if(e.button!==0)return;
+        e.stopPropagation();
+        function onMove(ev){
+          var rect=document.getElementById('mapContainer').getBoundingClientRect();
+          conn.x1=(ev.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+          conn.y1=(ev.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+          renderMapConnections();
+        }
+        function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);saveCase();}
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      };
+      layer.appendChild(handle1);
+      
+      var handle2=document.createElement('div');
+      handle2.className='line-handle';
+      handle2.style.cssText='position:absolute;left:'+(x2-6)+'px;top:'+(y2-6)+'px;width:12px;height:12px;background:white;border:2px solid '+color+';border-radius:50%;cursor:pointer;pointer-events:auto;z-index:15;';
+      handle2.onmousedown=function(e){
+        if(e.button!==0)return;
+        e.stopPropagation();
+        function onMove(ev){
+          var rect=document.getElementById('mapContainer').getBoundingClientRect();
+          conn.x2=(ev.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+          conn.y2=(ev.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+          renderMapConnections();
+        }
+        function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);saveCase();}
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      };
+      layer.appendChild(handle2);
+    }
+    
+    if(conn.label){
+      var midX=(x1+x2)/2,midY=(y1+y2)/2;
+      var lbl=document.createElement('div');
+      lbl.className='connection-label';
+      lbl.style.cssText='left:'+midX+'px;top:'+midY+'px;color:'+color+';pointer-events:auto;';
+      lbl.textContent=conn.label;
+      lbl.ondblclick=function(e){e.stopPropagation();openMapConnModal(idx);};
+      layer.appendChild(lbl);
+    }
+  });
+}
+
+function toggleMapConnectMode(){
+  if(!canEdit){showToast('View only');return;}
+  if(mapConnectingFrom){
+    mapConnectingFrom=null;
+    document.getElementById('mapConnectBtn').classList.remove('active');
+    document.getElementById('connectHint').classList.remove('show');
+  }else{
+    document.getElementById('mapConnectBtn').classList.add('active');
+    document.getElementById('connectHint').textContent='Click a marker to start connection';
+    document.getElementById('connectHint').classList.add('show');
+  }
+}
+
+function addMapFreeLine(){
+  if(!canEdit){showToast('View only');return;}
+  var container=document.getElementById('mapContainer');
+  var cx=(-mapBoard.x+container.clientWidth/2)/mapBoard.zoom;
+  var cy=(-mapBoard.y+container.clientHeight/2)/mapBoard.zoom;
+  var offsetX=(Math.random()-0.5)*150,offsetY=(Math.random()-0.5)*150;
+  if(!state.mapConnections)state.mapConnections=[];
+  state.mapConnections.push({from:null,to:null,color:state.connColor,style:state.connStyle,label:'',x1:cx-60+offsetX,y1:cy+offsetY,x2:cx+60+offsetX,y2:cy+offsetY});
+  saveCase();
+  renderMapConnections();
+  showToast('Free line added');
+}
+
+var editingMapConnIdx=null;
+function openMapConnModal(idx){
+  editingMapConnIdx=idx;
+  var conn=state.mapConnections[idx];
+  if(!conn)return;
+  document.getElementById('connLabelInput').value=conn.label||'';
+  document.getElementById('connColorSelect').value=conn.color||'red';
+  document.getElementById('connStyleSelect').value=conn.style||'solid';
+  document.getElementById('connLockGroup').style.display='none';
+  document.getElementById('connectionModal').classList.add('open');
+  document.getElementById('connLabelInput').focus();
+}
+
+function showMapConnContextMenu(e,idx){
+  document.querySelectorAll('.context-menu').forEach(function(m){m.remove();});
+  var menu=document.createElement('div');
+  menu.className='context-menu show';
+  menu.style.left=e.clientX+'px';
+  menu.style.top=e.clientY+'px';
+  menu.innerHTML='<div class="context-menu-item" data-action="edit">✏️ Edit Connection</div><div class="context-menu-item danger" data-action="delete">🗑️ Delete</div>';
+  menu.onclick=function(ev){
+    var action=ev.target.dataset.action;
+    if(action==='edit')openMapConnModal(idx);
+    if(action==='delete'){state.mapConnections.splice(idx,1);saveCase();renderMapConnections();showToast('Connection deleted');}
+    menu.remove();
+  };
+  document.body.appendChild(menu);
+  setTimeout(function(){document.addEventListener('click',function rem(){menu.remove();document.removeEventListener('click',rem);});},10);
+}
+
+// Zone Functions
+function toggleZoneToolbar(){
+  var toolbar=document.getElementById('zoneToolbar');
+  toolbar.classList.toggle('show');
+}
+
+function closeZoneToolbar(){
+  document.getElementById('zoneToolbar').classList.remove('show');
+}
+
+function createQuickZone(points){
+  if(!canEdit){showToast('View only');return;}
+  if(!state.mapZones)state.mapZones=[];
+  if(!state.nextZoneId)state.nextZoneId=1;
+  var newZone={
+    id:state.nextZoneId++,
+    points:points,
+    color:zoneDrawing.color,
+    opacity:40,
+    name:'',
+    notes:'',
+    created:Date.now()
+  };
+  state.mapZones.push(newZone);
+  saveCase();
+  renderMapZones();
+  editZone(newZone.id);
+}
+
+function createCenterZone(shape){
+  if(!canEdit){showToast('View only');return;}
+  closeZoneToolbar();
+  var container=document.getElementById('mapContainer');
+  var centerX=(container.clientWidth/2-mapBoard.x)/mapBoard.zoom;
+  var centerY=(container.clientHeight/2-mapBoard.y)/mapBoard.zoom;
+  var size=150;
+  var points=[];
+  if(shape==='square'){
+    points=[{x:centerX-size,y:centerY-size},{x:centerX+size,y:centerY-size},{x:centerX+size,y:centerY+size},{x:centerX-size,y:centerY+size}];
+  }else if(shape==='circle'){
+    for(var i=0;i<16;i++){
+      var angle=(i/16)*Math.PI*2;
+      points.push({x:centerX+Math.cos(angle)*size,y:centerY+Math.sin(angle)*size});
+    }
+  }else if(shape==='hexagon'){
+    for(var i=0;i<6;i++){
+      var angle=(i/6)*Math.PI*2-Math.PI/2;
+      points.push({x:centerX+Math.cos(angle)*size,y:centerY+Math.sin(angle)*size});
+    }
+  }else if(shape==='pentagon'){
+    for(var i=0;i<5;i++){
+      var angle=(i/5)*Math.PI*2-Math.PI/2;
+      points.push({x:centerX+Math.cos(angle)*size,y:centerY+Math.sin(angle)*size});
+    }
+  }
+  if(points.length>0)createQuickZone(points);
+}
+
+function startZoneDrawing(){
+  if(!canEdit){showToast('View only');return;}
+  closeZoneToolbar();
+  zoneDrawing.active=true;
+  zoneDrawing.points=[];
+  document.getElementById('addZoneBtn').classList.add('active');
+  document.getElementById('connectHint').textContent='Click to add points, double-click to finish';
+  document.getElementById('connectHint').classList.add('show');
+  document.getElementById('mapZoneDrawing').innerHTML='';
+}
+
+function cancelZoneDrawing(){
+  zoneDrawing.active=false;
+  zoneDrawing.points=[];
+  document.getElementById('addZoneBtn').classList.remove('active');
+  document.getElementById('connectHint').classList.remove('show');
+  document.getElementById('mapZoneDrawing').innerHTML='';
+}
+
+function addZonePoint(x,y){
+  if(zoneDrawing.points.length>=3){
+    var first=zoneDrawing.points[0];
+    var dist=Math.sqrt((x-first.x)*(x-first.x)+(y-first.y)*(y-first.y));
+    if(dist<20/mapBoard.zoom){
+      finishZoneDrawing();
+      return;
+    }
+  }
+  zoneDrawing.points.push({x:x,y:y});
+  renderZoneDrawing();
+}
+
+function finishZoneDrawing(){
+  if(zoneDrawing.points.length<3){
+    showToast('Need at least 3 points');
+    cancelZoneDrawing();
+    return;
+  }
+  if(!state.mapZones)state.mapZones=[];
+  if(!state.nextZoneId)state.nextZoneId=1;
+  var newZone={
+    id:state.nextZoneId++,
+    points:zoneDrawing.points.slice(),
+    color:zoneDrawing.color,
+    opacity:40,
+    name:'',
+    notes:'',
+    created:Date.now()
+  };
+  state.mapZones.push(newZone);
+  cancelZoneDrawing();
+  saveCase();
+  renderMapZones();
+  editZone(newZone.id);
+}
+
+function renderZoneDrawing(){
+  var layer=document.getElementById('mapZoneDrawing');
+  layer.innerHTML='';
+  if(!zoneDrawing.active||zoneDrawing.points.length===0)return;
+  
+  // Draw clickable points
+  zoneDrawing.points.forEach(function(pt,i){
+    var div=document.createElement('div');
+    div.className='map-zone-point';
+    div.style.left=pt.x+'px';
+    div.style.top=pt.y+'px';
+    if(i===0&&zoneDrawing.points.length>=3){
+      div.style.background='#22c55e';
+      div.style.boxShadow='0 0 8px #22c55e';
+      div.title='Click to close zone';
+      div.onclick=function(e){e.stopPropagation();finishZoneDrawing();};
+    }
+    layer.appendChild(div);
+  });
+  
+  // Draw preview polygon
+  if(zoneDrawing.points.length>=2){
+    var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
+    var pts=zoneDrawing.points.map(function(p){return p.x+','+p.y;}).join(' ');
+    var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points',pts);
+    poly.setAttribute('fill',zoneDrawing.color);
+    poly.setAttribute('fill-opacity','0.3');
+    poly.setAttribute('stroke',zoneDrawing.color);
+    poly.setAttribute('stroke-width','3');
+    poly.setAttribute('stroke-dasharray','8,4');
+    svg.appendChild(poly);
+    layer.appendChild(svg);
+  }
+}
+
+function renderMapZones(){
+  var layer=document.getElementById('mapZonesLayer');
+  var labelsLayer=document.getElementById('mapZoneLabels');
+  layer.innerHTML='';
+  labelsLayer.innerHTML='';
+  
+  (state.mapZones||[]).forEach(function(zone){
+    if(!zone.points||zone.points.length<3)return;
+    
+    // Calculate bounding box for label position
+    var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    zone.points.forEach(function(p){
+      if(p.x<minX)minX=p.x;
+      if(p.y<minY)minY=p.y;
+      if(p.x>maxX)maxX=p.x;
+      if(p.y>maxY)maxY=p.y;
+    });
+    var centerX=(minX+maxX)/2;
+    var centerY=(minY+maxY)/2;
+    
+    // Create group
+    var g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    var isSelected=selectedZone===zone.id;
+    g.setAttribute('class','map-zone'+(isSelected?' selected':''));
+    g.style.pointerEvents='auto';
+    g.style.cursor='pointer';
+    
+    // Create polygon
+    var pts=zone.points.map(function(p){return p.x+','+p.y;}).join(' ');
+    var poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points',pts);
+    poly.setAttribute('fill',zone.color||'#22c55e');
+    poly.setAttribute('fill-opacity',((zone.opacity||40)/100).toString());
+    poly.setAttribute('stroke',zone.color||'#22c55e');
+    poly.setAttribute('stroke-width',isSelected?'3':'2');
+    poly.setAttribute('stroke-opacity','0.8');
+    poly.style.pointerEvents='auto';
+    poly.style.cursor='pointer';
+    g.appendChild(poly);
+    
+    // Event handlers
+    (function(zoneId,zonePoints){
+      var isDragging=false;
+      var dragStartX,dragStartY;
+      var origPoints;
+      
+      poly.addEventListener('mousedown',function(e){
+        if(e.button!==0)return;
+        e.stopPropagation();
+        if(!canEdit)return;
+        isDragging=true;
+        var rect=document.getElementById('mapContainer').getBoundingClientRect();
+        dragStartX=(e.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+        dragStartY=(e.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+        origPoints=zonePoints.map(function(p){return{x:p.x,y:p.y};});
+        selectedZone=zoneId;
+        renderMapZones();
+        
+        function onMove(ev){
+          if(!isDragging)return;
+          var rect=document.getElementById('mapContainer').getBoundingClientRect();
+          var curX=(ev.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+          var curY=(ev.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+          var dx=curX-dragStartX;
+          var dy=curY-dragStartY;
+          var zone=state.mapZones.find(function(z){return z.id===zoneId;});
+          if(zone){
+            zone.points=origPoints.map(function(p){return{x:p.x+dx,y:p.y+dy};});
+            renderMapZones();
+          }
+        }
+        function onUp(){
+          if(isDragging){
+            isDragging=false;
+            saveCase();
+          }
+          document.removeEventListener('mousemove',onMove);
+          document.removeEventListener('mouseup',onUp);
+        }
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseup',onUp);
+      });
+      
+      poly.addEventListener('dblclick',function(e){
+        e.stopPropagation();
+        e.preventDefault();
+        editZone(zoneId);
+      });
+      
+      poly.addEventListener('contextmenu',function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        showZoneContextMenu(e,zoneId);
+      });
+    })(zone.id,zone.points);
+    
+    layer.appendChild(g);
+    
+    // Add label
+    if(zone.name){
+      var labelDiv=document.createElement('div');
+      labelDiv.className='map-zone-label';
+      labelDiv.style.left=centerX+'px';
+      labelDiv.style.top=centerY+'px';
+      labelDiv.textContent=zone.name;
+      labelsLayer.appendChild(labelDiv);
+    }
+    
+    // Add resize handles if selected
+    if(isSelected&&canEdit){
+      // Corner handles for bounding box resize
+      var corners=[
+        {x:minX,y:minY,cursor:'nwse-resize',corner:'nw'},
+        {x:maxX,y:minY,cursor:'nesw-resize',corner:'ne'},
+        {x:maxX,y:maxY,cursor:'nwse-resize',corner:'se'},
+        {x:minX,y:maxY,cursor:'nesw-resize',corner:'sw'}
+      ];
+      corners.forEach(function(c){
+        var handle=document.createElement('div');
+        handle.className='zone-resize-handle';
+        handle.style.left=c.x+'px';
+        handle.style.top=c.y+'px';
+        handle.style.cursor=c.cursor;
+        handle.dataset.corner=c.corner;
+        handle.dataset.zoneId=zone.id;
+        handle.onmousedown=function(e){
+          e.stopPropagation();
+          startZoneResize(e,zone.id,c.corner,minX,minY,maxX,maxY);
+        };
+        labelsLayer.appendChild(handle);
+      });
+    }
+  });
+}
+
+function startZoneResize(e,zoneId,corner,origMinX,origMinY,origMaxX,origMaxY){
+  e.preventDefault();
+  var zone=state.mapZones.find(function(z){return z.id===zoneId;});
+  if(!zone)return;
+  var container=document.getElementById('mapContainer');
+  var startMouseX=e.clientX;
+  var startMouseY=e.clientY;
+  var origPoints=zone.points.map(function(p){return{x:p.x,y:p.y};});
+  var origW=origMaxX-origMinX;
+  var origH=origMaxY-origMinY;
+  
+  function onMove(ev){
+    var dx=(ev.clientX-startMouseX)/mapBoard.zoom;
+    var dy=(ev.clientY-startMouseY)/mapBoard.zoom;
+    var newMinX=origMinX,newMinY=origMinY,newMaxX=origMaxX,newMaxY=origMaxY;
+    if(corner==='nw'){newMinX+=dx;newMinY+=dy;}
+    else if(corner==='ne'){newMaxX+=dx;newMinY+=dy;}
+    else if(corner==='se'){newMaxX+=dx;newMaxY+=dy;}
+    else if(corner==='sw'){newMinX+=dx;newMaxY+=dy;}
+    var newW=newMaxX-newMinX;
+    var newH=newMaxY-newMinY;
+    if(newW<30)newW=30;
+    if(newH<30)newH=30;
+    var scaleX=newW/origW;
+    var scaleY=newH/origH;
+    zone.points=origPoints.map(function(p){
+      var relX=(p.x-origMinX)/origW;
+      var relY=(p.y-origMinY)/origH;
+      return{x:newMinX+relX*newW,y:newMinY+relY*newH};
+    });
+    renderMapZones();
+  }
+  function onUp(){
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    saveCase();
+  }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+function selectZone(id){
+  selectedZone=id;
+  renderMapZones();
+}
+
+function editZone(id){
+  if(!canEdit){showToast('View only');return;}
+  var zone=(state.mapZones||[]).find(function(z){return z.id===id;});
+  if(!zone)return;
+  editingZoneId=id;
+  document.getElementById('zoneModalTitle').textContent=zone.name?'Edit Zone':'Name Your Zone';
+  document.getElementById('zoneNameInput').value=zone.name||'';
+  document.getElementById('zoneNotesInput').value=zone.notes||'';
+  document.getElementById('zoneOpacityInput').value=zone.opacity||40;
+  document.getElementById('deleteZoneBtn').style.display='inline-block';
+  // Set color
+  document.querySelectorAll('.zone-color-option').forEach(function(opt){
+    opt.classList.toggle('selected',opt.dataset.color===(zone.color||'#22c55e'));
+  });
+  document.getElementById('zoneModalIndicator').style.background=zone.color||'#22c55e';
+  document.getElementById('zoneModal').classList.add('open');
+  document.getElementById('zoneNameInput').focus();
+}
+
+function saveZone(){
+  if(editingZoneId===null)return;
+  var zone=state.mapZones.find(function(z){return z.id===editingZoneId;});
+  if(!zone)return;
+  zone.name=document.getElementById('zoneNameInput').value.trim();
+  zone.notes=document.getElementById('zoneNotesInput').value.trim();
+  zone.opacity=parseInt(document.getElementById('zoneOpacityInput').value);
+  var selectedColor=document.querySelector('.zone-color-option.selected');
+  if(selectedColor)zone.color=selectedColor.dataset.color;
+  closeZoneModal();
+  saveCase();
+  renderMapZones();
+  showToast('Zone saved!');
+}
+
+function deleteZone(id){
+  if(!canEdit){showToast('View only');return;}
+  if(!state.mapZones)return;
+  state.mapZones=state.mapZones.filter(function(z){return z.id!==id;});
+  selectedZone=null;
+  closeZoneModal();
+  saveCase();
+  renderMapZones();
+  showToast('Zone deleted');
+}
+
+function closeZoneModal(){
+  document.getElementById('zoneModal').classList.remove('open');
+  editingZoneId=null;
+}
+
+function showZoneContextMenu(e,id){
+  document.querySelectorAll('.context-menu').forEach(function(m){m.remove();});
+  var menu=document.createElement('div');
+  menu.className='context-menu show';
+  menu.style.left=e.clientX+'px';
+  menu.style.top=e.clientY+'px';
+  menu.innerHTML='<div class="context-menu-item" data-action="edit">✏️ Edit Zone</div><div class="context-menu-item danger" data-action="delete">🗑️ Delete Zone</div>';
+  menu.onclick=function(ev){
+    var action=ev.target.dataset.action;
+    if(action==='edit')editZone(id);
+    if(action==='delete')deleteZone(id);
+    menu.remove();
+  };
+  document.body.appendChild(menu);
+  setTimeout(function(){document.addEventListener('click',function rem(){menu.remove();document.removeEventListener('click',rem);});},10);
+}
+
+function renderMapMarkers(){
+  var layer=document.getElementById('mapMarkersLayer');
+  layer.innerHTML='';
+  (state.mapMarkers||[]).forEach(function(marker){
+    var mt=MARKER_TYPES[marker.type]||MARKER_TYPES.location;
+    var size=marker.size||28;
+    var el=document.createElement('div');
+    el.className='map-marker'+(selectedMarker===marker.id?' selected':'');
+    el.style.left=marker.x+'px';
+    el.style.top=marker.y+'px';
+    el.dataset.id=marker.id;
+    var html='<div class="map-marker-icon" style="font-size:'+size+'px;">'+mt.icon+'</div>';
+    if(marker.label&&!hideMapLabels){
+      html+='<div class="map-marker-label">'+esc(marker.label)+'</div>';
+    }
+    el.innerHTML=html;
+    if(marker.label){el.title=marker.label;}
+    el.onclick=function(e){
+      e.stopPropagation();
+      // Handle connection mode
+      if(document.getElementById('mapConnectBtn').classList.contains('active')){
+        if(!mapConnectingFrom){
+          mapConnectingFrom=marker.id;
+          document.getElementById('connectHint').textContent='Click another marker to connect';
+        }else if(mapConnectingFrom!==marker.id){
+          if(!state.mapConnections)state.mapConnections=[];
+          state.mapConnections.push({from:mapConnectingFrom,to:marker.id,color:state.connColor,style:state.connStyle,label:''});
+          mapConnectingFrom=null;
+          document.getElementById('mapConnectBtn').classList.remove('active');
+          document.getElementById('connectHint').classList.remove('show');
+          saveCase();
+          renderMapConnections();
+          showToast('Connected!');
+        }
+        return;
+      }
+      // Single click selects, handled by mousedown/up for drag detection
+    };
+    el.oncontextmenu=function(e){e.preventDefault();e.stopPropagation();showMarkerContextMenu(e,marker.id);};
+    // Drag marker or click to edit
+    el.onmousedown=function(e){
+      if(e.button!==0)return;
+      if(document.getElementById('mapConnectBtn').classList.contains('active'))return;
+      e.stopPropagation();
+      var startX=e.clientX,startY=e.clientY;
+      var origX=marker.x,origY=marker.y;
+      var moved=false;
+      function onMove(ev){
+        if(!canEdit)return;
+        var dx=(ev.clientX-startX)/mapBoard.zoom;
+        var dy=(ev.clientY-startY)/mapBoard.zoom;
+        if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
+        if(moved){
+          marker.x=Math.max(0,Math.min(MAP_WIDTH,origX+dx));
+          marker.y=Math.max(0,Math.min(MAP_HEIGHT,origY+dy));
+          el.style.left=marker.x+'px';
+          el.style.top=marker.y+'px';
+          renderMapConnections();
+        }
+      }
+      function onUp(){
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+        if(moved){
+          saveCase();renderMapMarkers();renderMapConnections();
+        }else{
+          // Single click - view marker info
+          selectedMarker=marker.id;
+          viewMarkerInfo(marker.id);
+        }
+      }
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    };
+    layer.appendChild(el);
+  });
+}
+
+function selectMarker(id){
+  selectedMarker=id;
+  renderMapMarkers();
+}
+
+function updateMapTransform(){
+  var mapEl=document.getElementById('mapBoard');
+  mapEl.style.transform='translate('+mapBoard.x+'px,'+mapBoard.y+'px) scale('+mapBoard.zoom+')';
+  document.getElementById('zoomLevel').textContent=Math.round(mapBoard.zoom*100)+'%';
+}
+
+function openMarkerModal(x,y){
+  if(!canEdit){showToast('View only');return;}
+  markerClickPos={x:x,y:y};
+  editingMarkerId=null;
+  document.getElementById('markerModalTitle').textContent='Add Map Marker';
+  document.getElementById('markerTypeSelect').value='location';
+  document.getElementById('markerSizeInput').value=28;
+  document.getElementById('markerSizeValue').textContent='28';
+  document.getElementById('markerLabelInput').value='';
+  document.getElementById('markerDescInput').value='';
+  document.getElementById('markerLinksInput').value='';
+  document.getElementById('markerNotesInput').value='';
+  document.getElementById('markerModal').classList.add('open');
+}
+
+function editMarker(id){
+  if(!canEdit){showToast('View only');return;}
+  var marker=(state.mapMarkers||[]).find(function(m){return m.id===id;});
+  if(!marker)return;
+  editingMarkerId=id;
+  document.getElementById('markerModalTitle').textContent='Edit Marker';
+  document.getElementById('markerTypeSelect').value=marker.type;
+  document.getElementById('markerSizeInput').value=marker.size||28;
+  document.getElementById('markerSizeValue').textContent=marker.size||28;
+  document.getElementById('markerLabelInput').value=marker.label||'';
+  document.getElementById('markerDescInput').value=marker.description||'';
+  document.getElementById('markerLinksInput').value=(marker.links||[]).join('\n');
+  document.getElementById('markerNotesInput').value=marker.notes||'';
+  document.getElementById('markerModal').classList.add('open');
+}
+
+function saveMarker(){
+  var type=document.getElementById('markerTypeSelect').value;
+  var size=parseInt(document.getElementById('markerSizeInput').value)||28;
+  var label=document.getElementById('markerLabelInput').value.trim();
+  var desc=document.getElementById('markerDescInput').value.trim();
+  var linksText=document.getElementById('markerLinksInput').value.trim();
+  var links=linksText?linksText.split('\n').map(function(l){return l.trim();}).filter(function(l){return l;}):[]; 
+  var notes=document.getElementById('markerNotesInput').value.trim();
+  if(!state.mapMarkers)state.mapMarkers=[];
+  if(editingMarkerId){
+    var marker=state.mapMarkers.find(function(m){return m.id===editingMarkerId;});
+    if(marker){marker.type=type;marker.size=size;marker.label=label;marker.description=desc;marker.links=links;marker.notes=notes;}
+  }else{
+    state.mapMarkers.push({id:state.nextMarkerId++,type:type,size:size,label:label,description:desc,links:links,notes:notes,x:markerClickPos.x,y:markerClickPos.y,created:Date.now()});
+  }
+  closeMarkerModal();
+  saveCase();
+  renderMapMarkers();
+  showToast(editingMarkerId?'Marker updated!':'Marker added!');
+}
+
+function closeMarkerModal(){
+  document.getElementById('markerModal').classList.remove('open');
+  editingMarkerId=null;
+}
+
+function viewMarkerInfo(id){
+  var marker=(state.mapMarkers||[]).find(function(m){return m.id===id;});
+  if(!marker)return;
+  var mt=MARKER_TYPES[marker.type]||MARKER_TYPES.location;
+  document.getElementById('markerInfoIndicator').style.background=mt.color;
+  document.getElementById('markerInfoTitle').textContent=marker.label||'Untitled Marker';
+  document.getElementById('markerInfoSubtitle').textContent=mt.icon+' '+mt.name;
+  
+  var html='';
+  if(marker.description){
+    html+='<div class="marker-info-section"><div class="marker-info-label">Description</div><div class="marker-info-value">'+esc(marker.description)+'</div></div>';
+  }
+  if(marker.notes){
+    html+='<div class="marker-info-section"><div class="marker-info-label">Notes</div><div class="marker-info-value" style="white-space:pre-wrap;">'+esc(marker.notes)+'</div></div>';
+  }
+  if(marker.links&&marker.links.length>0){
+    html+='<div class="marker-info-section"><div class="marker-info-label">Links</div><div class="marker-info-links">';
+    marker.links.forEach(function(link){
+      var displayUrl=link.length>50?link.substring(0,50)+'...':link;
+      html+='<a href="'+esc(link)+'" target="_blank" rel="noopener noreferrer" class="marker-info-link">🔗 '+esc(displayUrl)+'</a>';
+    });
+    html+='</div></div>';
+  }
+  if(marker.created){
+    html+='<div class="marker-info-section"><div class="marker-info-label">Created</div><div class="marker-info-value" style="font-size:0.8rem;opacity:0.7;">'+new Date(marker.created).toLocaleString()+'</div></div>';
+  }
+  if(!html){
+    html='<div style="text-align:center;opacity:0.5;padding:20px;">No additional information attached.<br><br>Click Edit to add description, links, and notes.</div>';
+  }
+  document.getElementById('markerInfoContent').innerHTML=html;
+  document.getElementById('markerInfoModal').dataset.markerId=id;
+  document.getElementById('deleteMarkerInfoBtn').style.display=canEdit?'inline-block':'none';
+  document.getElementById('editMarkerInfoBtn').style.display=canEdit?'inline-block':'none';
+  // Size slider
+  var currentSize=marker.size||28;
+  document.getElementById('markerInfoSizeInput').value=currentSize;
+  document.getElementById('markerInfoSizeValue').textContent=currentSize;
+  document.getElementById('markerInfoSizeSection').style.display=canEdit?'block':'none';
+  document.getElementById('markerInfoModal').classList.add('open');
+}
+
+function closeMarkerInfoModal(){
+  document.getElementById('markerInfoModal').classList.remove('open');
+}
+
+function deleteMarker(id){
+  if(!canEdit){showToast('View only');return;}
+  if(!state.mapMarkers)return;
+  state.mapMarkers=state.mapMarkers.filter(function(m){return m.id!==id;});
+  selectedMarker=null;
+  saveCase();
+  renderMapMarkers();
+  showToast('Marker deleted');
+}
+
+function showMarkerContextMenu(e,id){
+  document.querySelectorAll('.context-menu').forEach(function(m){m.remove();});
+  var menu=document.createElement('div');
+  menu.className='context-menu show';
+  menu.style.left=e.clientX+'px';
+  menu.style.top=e.clientY+'px';
+  var html='<div class="context-menu-item" data-action="view">👁️ View Info</div>';
+  if(canEdit){
+    html+='<div class="context-menu-item" data-action="edit">✏️ Edit Marker</div>';
+    html+='<div class="context-menu-item danger" data-action="delete">🗑️ Delete Marker</div>';
+  }
+  menu.innerHTML=html;
+  menu.onclick=function(ev){
+    var action=ev.target.dataset.action;
+    if(action==='view')viewMarkerInfo(id);
+    if(action==='edit')editMarker(id);
+    if(action==='delete')deleteMarker(id);
+    menu.remove();
+  };
+  document.body.appendChild(menu);
+  setTimeout(function(){document.addEventListener('click',function rem(){menu.remove();document.removeEventListener('click',rem);});},10);
+}
+
+function setupEvents(){
+  boardContainer.onmousedown=function(e){if(e.target.closest('.pin'))return;if(e.target.closest('.minimap'))return;if(e.target.closest('.connection-hitbox'))return;if(e.target.closest('.connection-handle'))return;if(e.target.closest('.connection-label'))return;board.panning=true;board.sx=e.clientX-board.x;board.sy=e.clientY-board.y;boardEl.classList.add('grabbing');};
+  document.onmousemove=function(e){
+    if(board.panning){board.x=e.clientX-board.sx;board.y=e.clientY-board.sy;updateBoard();updateMinimap();}
+    if(rotate.active){
+      var currentAngle=Math.atan2(e.clientY-rotate.cy,e.clientX-rotate.cx);
+      var delta=currentAngle-rotate.lastAngle;
+      // Handle angle wrap-around for smooth rotation
+      if(delta>Math.PI)delta-=2*Math.PI;
+      if(delta<-Math.PI)delta+=2*Math.PI;
+      rotate.totalRotation+=delta*(180/Math.PI);
+      rotate.lastAngle=currentAngle;
+      var newRotation=rotate.totalRotation;
+      // Snap to 45 degree increments only if holding shift
+      if(e.shiftKey)newRotation=Math.round(newRotation/45)*45;
+      var pin=state.pins.find(function(p){return p.id===rotate.id;});
+      if(pin){
+        pin.rotation=newRotation;
+        var pinEl=document.querySelector('.pin[data-id="'+rotate.id+'"]');
+        if(pinEl)pinEl.style.transform='rotate('+newRotation+'deg)';
+      }
+    }
+  };
+  document.onmouseup=function(){
+    board.panning=false;
+    boardEl.classList.remove('grabbing');
+    if(rotate.active){
+      rotate.active=false;
+      saveCase();
+      render();
+    }
+  };
+  boardContainer.onwheel=function(e){e.preventDefault();var oldZoom=board.zoom;var newZoom=Math.max(0.2,Math.min(2,board.zoom+(e.deltaY>0?-0.1:0.1)));var centerX=boardContainer.clientWidth/2;var centerY=boardContainer.clientHeight/2;var worldX=(centerX-board.x)/oldZoom;var worldY=(centerY-board.y)/oldZoom;board.zoom=newZoom;board.x=centerX-worldX*newZoom;board.y=centerY-worldY*newZoom;document.getElementById('zoomLevel').textContent=Math.round(board.zoom*100)+'%';updateBoard();updateMinimap();};
+  
+  document.getElementById('sidebarToggle').onclick=function(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('collapsed',!sidebarOpen);this.classList.toggle('collapsed',!sidebarOpen);this.textContent=sidebarOpen?'◀':'▶';this.style.left=sidebarOpen?'180px':'0';};
+  document.getElementById('minimapToggle').onclick=function(){minimapOpen=!minimapOpen;document.getElementById('minimap').classList.toggle('hidden',!minimapOpen);};
+  
+  // Tab switching
+  document.querySelectorAll('.header-tab').forEach(function(tab){tab.onclick=function(){switchTab(this.dataset.tab);};});
+  
+  // Map board events
+  var mapContainer=document.getElementById('mapContainer');
+  var mapEl=document.getElementById('mapBoard');
+  
+  mapContainer.onmousedown=function(e){
+    if(e.target.closest('.map-marker'))return;
+    if(e.target.closest('.map-zone-point'))return;
+    if(e.target.closest('.zone-resize-handle'))return;
+    if(e.target.closest('.connection-hitbox'))return;
+    if(e.target.closest('.connection-label'))return;
+    if(e.target.closest('.line-handle'))return;
+    // Check for zone polygon or group
+    if(e.target.tagName==='polygon')return;
+    if(e.target.closest('.map-zone'))return;
+    if(zoneDrawing.active)return;
+    mapBoard.panning=true;
+    mapBoard.sx=e.clientX-mapBoard.x;
+    mapBoard.sy=e.clientY-mapBoard.y;
+    mapEl.classList.add('grabbing');
+  };
+  
+  mapContainer.onclick=function(e){
+    if(!zoneDrawing.active)return;
+    if(e.target.closest('.map-zone-point'))return;
+    if(e.target.closest('.map-marker'))return;
+    if(e.target.closest('.connection-hitbox'))return;
+    if(e.target.closest('.line-handle'))return;
+    if(e.target.tagName==='polygon')return;
+    var rect=mapContainer.getBoundingClientRect();
+    var x=(e.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+    var y=(e.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+    addZonePoint(x,y);
+  };
+  
+  mapContainer.onmouseup=function(e){
+    // Deselect zone when clicking empty area
+    if(!zoneDrawing.active&&selectedZone!==null){
+      if(!e.target.closest('.zone-resize-handle')&&e.target.tagName!=='polygon'){
+        selectedZone=null;
+        renderMapZones();
+      }
+    }
+  };
+  
+  document.addEventListener('mousemove',function(e){
+    if(mapBoard.panning){
+      mapBoard.x=e.clientX-mapBoard.sx;
+      mapBoard.y=e.clientY-mapBoard.sy;
+      clampMapPosition();
+      updateMapTransform();
+    }
+  });
+  
+  document.addEventListener('mouseup',function(e){
+    if(mapBoard.panning){
+      mapBoard.panning=false;
+      mapEl.classList.remove('grabbing');
+    }
+  });
+  
+  mapContainer.onwheel=function(e){
+    e.preventDefault();
+    var rect=mapContainer.getBoundingClientRect();
+    var mouseX=e.clientX-rect.left;
+    var mouseY=e.clientY-rect.top;
+    var worldX=(mouseX-mapBoard.x)/mapBoard.zoom;
+    var worldY=(mouseY-mapBoard.y)/mapBoard.zoom;
+    var delta=e.deltaY>0?0.9:1.1;
+    var minZoom=getMinMapZoom();
+    var newZoom=Math.min(4,Math.max(minZoom,mapBoard.zoom*delta));
+    mapBoard.zoom=newZoom;
+    mapBoard.x=mouseX-worldX*newZoom;
+    mapBoard.y=mouseY-worldY*newZoom;
+    clampMapPosition();
+    updateMapTransform();
+  };
+  
+  mapContainer.ondblclick=function(e){
+    if(e.target.closest('.map-marker'))return;
+    if(e.target.closest('.line-handle'))return;
+    if(e.target.closest('.connection-hitbox'))return;
+    if(e.target.tagName==='polygon')return; // Zone polygon
+    if(zoneDrawing.active){
+      // Finish zone on double-click
+      finishZoneDrawing();
+      return;
+    }
+    var rect=mapContainer.getBoundingClientRect();
+    var x=(e.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+    var y=(e.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+    openMarkerModal(x,y);
+  };
+  
+  mapContainer.oncontextmenu=function(e){
+    if(e.target.closest('.map-marker'))return;
+    if(e.target.closest('.line-handle'))return;
+    if(e.target.closest('.connection-hitbox'))return;
+    if(e.target.tagName==='polygon')return;
+    if(zoneDrawing.active){cancelZoneDrawing();return;}
+    e.preventDefault();
+    // Remove any existing context menus
+    document.querySelectorAll('.context-menu').forEach(function(m){m.remove();});
+    var rect=mapContainer.getBoundingClientRect();
+    var x=(e.clientX-rect.left-mapBoard.x)/mapBoard.zoom;
+    var y=(e.clientY-rect.top-mapBoard.y)/mapBoard.zoom;
+    var menu=document.createElement('div');
+    menu.className='context-menu show';
+    menu.style.left=e.clientX+'px';
+    menu.style.top=e.clientY+'px';
+    menu.innerHTML='<div class="context-menu-item" data-action="marker">📍 Add Marker</div>'+
+      '<div class="context-menu-divider"></div>'+
+      '<div style="padding:6px 10px;font-size:0.65rem;color:var(--text-muted);">ZONE COLOR</div>'+
+      '<div style="display:flex;gap:4px;padding:4px 10px 8px;" id="ctxColors">'+
+        '<div class="ctxc" data-color="#22c55e" style="background:#22c55e;width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid white;"></div>'+
+        '<div class="ctxc" data-color="#eab308" style="background:#eab308;width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;"></div>'+
+        '<div class="ctxc" data-color="#ef4444" style="background:#ef4444;width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;"></div>'+
+        '<div class="ctxc" data-color="#3b82f6" style="background:#3b82f6;width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;"></div>'+
+        '<div class="ctxc" data-color="#a855f7" style="background:#a855f7;width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;"></div>'+
+        '<div class="ctxc" data-color="#f97316" style="background:#f97316;width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;"></div>'+
+      '</div>'+
+      '<div class="context-menu-item" data-action="draw">✏️ Draw Zone</div>'+
+      '<div class="context-menu-item" data-action="square">◼ Square</div>'+
+      '<div class="context-menu-item" data-action="circle">● Circle</div>'+
+      '<div class="context-menu-item" data-action="hexagon">⬡ Hexagon</div>';
+    menu.querySelector('#ctxColors').onclick=function(ev){
+      ev.stopPropagation();
+      var opt=ev.target.closest('.ctxc');
+      if(!opt)return;
+      menu.querySelectorAll('.ctxc').forEach(function(o){o.style.borderColor='transparent';});
+      opt.style.borderColor='white';
+      zoneDrawing.color=opt.dataset.color;
+    };
+    menu.onclick=function(ev){
+      var action=ev.target.dataset.action;
+      if(!action)return;
+      if(action==='marker'){openMarkerModal(x,y);menu.remove();return;}
+      if(action==='draw'){startZoneDrawing();menu.remove();return;}
+      var size=150;
+      var points=[];
+      if(action==='square'){
+        points=[{x:x-size,y:y-size},{x:x+size,y:y-size},{x:x+size,y:y+size},{x:x-size,y:y+size}];
+      }else if(action==='circle'){
+        for(var i=0;i<16;i++){var angle=(i/16)*Math.PI*2;points.push({x:x+Math.cos(angle)*size,y:y+Math.sin(angle)*size});}
+      }else if(action==='hexagon'){
+        for(var i=0;i<6;i++){var angle=(i/6)*Math.PI*2-Math.PI/2;points.push({x:x+Math.cos(angle)*size,y:y+Math.sin(angle)*size});}
+      }
+      if(points.length>0)createQuickZone(points);
+      menu.remove();
+    };
+    document.body.appendChild(menu);
+    setTimeout(function(){document.addEventListener('click',function rem(){menu.remove();document.removeEventListener('click',rem);});},10);
+  };
+  
+  // Map zoom buttons
+  document.getElementById('zoomInBtn').onclick=function(){
+    if(activeTab==='map'){
+      var centerX=mapContainer.clientWidth/2;
+      var centerY=mapContainer.clientHeight/2;
+      var worldX=(centerX-mapBoard.x)/mapBoard.zoom;
+      var worldY=(centerY-mapBoard.y)/mapBoard.zoom;
+      mapBoard.zoom=Math.min(4,mapBoard.zoom*1.2);
+      mapBoard.x=centerX-worldX*mapBoard.zoom;
+      mapBoard.y=centerY-worldY*mapBoard.zoom;
+      clampMapPosition();
+      updateMapTransform();
+    }else{
+      var oldZoom=board.zoom;var newZoom=Math.min(3,board.zoom+0.1);var centerX=boardContainer.clientWidth/2;var centerY=boardContainer.clientHeight/2;var worldX=(centerX-board.x)/oldZoom;var worldY=(centerY-board.y)/oldZoom;board.zoom=newZoom;board.x=centerX-worldX*newZoom;board.y=centerY-worldY*newZoom;document.getElementById('zoomLevel').textContent=Math.round(board.zoom*100)+'%';updateBoard();updateMinimap();
+    }
+  };
+  document.getElementById('zoomOutBtn').onclick=function(){
+    if(activeTab==='map'){
+      var centerX=mapContainer.clientWidth/2;
+      var centerY=mapContainer.clientHeight/2;
+      var worldX=(centerX-mapBoard.x)/mapBoard.zoom;
+      var worldY=(centerY-mapBoard.y)/mapBoard.zoom;
+      var minZoom=getMinMapZoom();
+      mapBoard.zoom=Math.max(minZoom,mapBoard.zoom/1.2);
+      mapBoard.x=centerX-worldX*mapBoard.zoom;
+      mapBoard.y=centerY-worldY*mapBoard.zoom;
+      clampMapPosition();
+      updateMapTransform();
+    }else{
+      var oldZoom=board.zoom;var newZoom=Math.max(0.2,board.zoom-0.1);var centerX=boardContainer.clientWidth/2;var centerY=boardContainer.clientHeight/2;var worldX=(centerX-board.x)/oldZoom;var worldY=(centerY-board.y)/oldZoom;board.zoom=newZoom;board.x=centerX-worldX*newZoom;board.y=centerY-worldY*newZoom;document.getElementById('zoomLevel').textContent=Math.round(board.zoom*100)+'%';updateBoard();updateMinimap();
+    }
+  };
+  document.getElementById('resetZoomBtn').onclick=function(){
+    if(activeTab==='map'){
+      // Reset to cover zoom (fill viewport)
+      mapBoard.zoom=getMinMapZoom();
+      mapBoard.x=(mapContainer.clientWidth-MAP_WIDTH*mapBoard.zoom)/2;
+      mapBoard.y=(mapContainer.clientHeight-MAP_HEIGHT*mapBoard.zoom)/2;
+      clampMapPosition();
+      updateMapTransform();
+    }else{
+      board.zoom=1;board.x=boardContainer.clientWidth/2-4000;board.y=boardContainer.clientHeight/2-4000;document.getElementById('zoomLevel').textContent='100%';updateBoard();updateMinimap();
+    }
+  };
+  
+  // Add marker button
+  document.getElementById('addMarkerBtn').onclick=function(){
+    var x=(-mapBoard.x+mapContainer.clientWidth/2)/mapBoard.zoom;
+    var y=(-mapBoard.y+mapContainer.clientHeight/2)/mapBoard.zoom;
+    openMarkerModal(x,y);
+  };
+  
+  // Map connect and free line buttons
+  document.getElementById('mapConnectBtn').onclick=toggleMapConnectMode;
+  document.getElementById('mapFreeLineBtn').onclick=addMapFreeLine;
+  document.getElementById('hideLabelsBtn').onclick=function(){
+    hideMapLabels=!hideMapLabels;
+    this.classList.toggle('active',hideMapLabels);
+    this.textContent=hideMapLabels?'🏷️ Show':'🏷️ Labels';
+    renderMapMarkers();
+  };
+  
+  // Zone toolbar
+  document.getElementById('addZoneBtn').onclick=function(e){
+    e.stopPropagation();
+    if(zoneDrawing.active){cancelZoneDrawing();return;}
+    toggleZoneToolbar();
+  };
+  document.getElementById('zoneToolbarColors').onclick=function(e){
+    var opt=e.target.closest('.zone-toolbar-color');
+    if(!opt)return;
+    document.querySelectorAll('.zone-toolbar-color').forEach(function(o){o.classList.remove('selected');});
+    opt.classList.add('selected');
+    zoneDrawing.color=opt.dataset.color;
+  };
+  document.getElementById('zoneDrawMode').onclick=function(){startZoneDrawing();};
+  document.getElementById('zoneSquareMode').onclick=function(){createCenterZone('square');};
+  document.getElementById('zoneCircleMode').onclick=function(){createCenterZone('circle');};
+  document.getElementById('zoneHexMode').onclick=function(){createCenterZone('hexagon');};
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#addZoneBtn')&&!e.target.closest('#zoneToolbar')){
+      closeZoneToolbar();
+    }
+    // Close context menus when clicking outside
+    if(contextMenu && !e.target.closest('.context-menu') && !e.target.closest('.pin')){
+      contextMenu.classList.remove('show');
+    }
+    if(pinContextMenu && !e.target.closest('.context-menu')){
+      pinContextMenu.classList.remove('show');
+    }
+  });
+  
+  // Zone modal events
+  document.getElementById('closeZoneBtn').onclick=closeZoneModal;
+  document.getElementById('cancelZoneBtn').onclick=closeZoneModal;
+  document.getElementById('saveZoneBtn').onclick=saveZone;
+  document.getElementById('deleteZoneBtn').onclick=function(){if(editingZoneId)deleteZone(editingZoneId);};
+  document.getElementById('zoneColorPicker').onclick=function(e){
+    var opt=e.target.closest('.zone-color-option');
+    if(!opt)return;
+    document.querySelectorAll('.zone-color-option').forEach(function(o){o.classList.remove('selected');});
+    opt.classList.add('selected');
+    document.getElementById('zoneModalIndicator').style.background=opt.dataset.color;
+  };
+  
+  // Marker modal events
+  document.getElementById('closeMarkerBtn').onclick=closeMarkerModal;
+  document.getElementById('cancelMarkerBtn').onclick=closeMarkerModal;
+  document.getElementById('saveMarkerBtn').onclick=saveMarker;
+  document.getElementById('markerSizeInput').oninput=function(){
+    document.getElementById('markerSizeValue').textContent=this.value;
+  };
+  
+  // Marker info modal events
+  document.getElementById('closeMarkerInfoBtn').onclick=closeMarkerInfoModal;
+  document.getElementById('closeMarkerInfoBtn2').onclick=closeMarkerInfoModal;
+  document.getElementById('editMarkerInfoBtn').onclick=function(){
+    var id=parseInt(document.getElementById('markerInfoModal').dataset.markerId);
+    closeMarkerInfoModal();
+    editMarker(id);
+  };
+  document.getElementById('deleteMarkerInfoBtn').onclick=function(){
+    var id=parseInt(document.getElementById('markerInfoModal').dataset.markerId);
+    if(confirm('Delete this marker?')){
+      closeMarkerInfoModal();
+      deleteMarker(id);
+    }
+  };
+  document.getElementById('markerInfoSizeInput').oninput=function(){
+    var size=parseInt(this.value);
+    document.getElementById('markerInfoSizeValue').textContent=size;
+    var id=parseInt(document.getElementById('markerInfoModal').dataset.markerId);
+    var marker=(state.mapMarkers||[]).find(function(m){return m.id===id;});
+    if(marker){
+      marker.size=size;
+      renderMapMarkers();
+    }
+  };
+  document.getElementById('markerInfoSizeInput').onchange=function(){
+    saveCase();
+    showToast('Size updated');
+  };
+  
+  // Map actions buttons (duplicates for map tab)
+  document.getElementById('shareBtn2').onclick=function(){document.getElementById('shareBtn').click();};
+  document.getElementById('myCasesBtn2').onclick=function(){document.getElementById('myCasesBtn').click();};
+  document.getElementById('newCaseBtn2').onclick=function(){document.getElementById('newCaseBtn').click();};
+  document.getElementById('profileBtn2').onclick=function(){document.getElementById('profileBtn').click();};
+
+  document.getElementById('addPinBtn').onclick=function(){if(typeof contextMenuPos!=='undefined')contextMenuPos.useCustomPos=false;openAddPinModal();};
+  document.getElementById('hidePinLabelsBtn').onclick=function(){
+    hidePinLabels=!hidePinLabels;
+    this.classList.toggle('active',hidePinLabels);
+    this.textContent=hidePinLabels?'🏷️ Show':'🏷️ Labels';
+    render();
+  };
+  document.getElementById('connectBtn').onclick=toggleConnectMode;
+  document.getElementById('freeLineBtn').onclick=addFreeLine;
+  document.getElementById('caseNumber').onclick=function(){if(!canEdit)return;editingCaseField='number';document.getElementById('editCaseModalTitle').textContent='Edit Case Number';document.getElementById('editCaseLabel').textContent='Case Number';document.getElementById('editCaseInput').value=state.caseNumber;document.getElementById('editCaseModal').classList.add('open');document.getElementById('editCaseInput').focus();};
+  document.getElementById('caseTitle').onclick=function(){if(!canEdit)return;editingCaseField='title';document.getElementById('editCaseModalTitle').textContent='Edit Case Title';document.getElementById('editCaseLabel').textContent='Case Title';document.getElementById('editCaseInput').value=state.caseTitle;document.getElementById('editCaseModal').classList.add('open');document.getElementById('editCaseInput').focus();};
+  document.getElementById('closeEditCaseBtn').onclick=closeEditCaseModal;
+  document.getElementById('cancelEditCaseBtn').onclick=closeEditCaseModal;
+  document.getElementById('saveEditCaseBtn').onclick=saveEditCase;
+  document.getElementById('editCaseInput').onkeydown=function(e){if(e.key==='Enter')saveEditCase();if(e.key==='Escape')closeEditCaseModal();};
+  document.getElementById('closePinBtn').onclick=closePinModal;
+  document.getElementById('cancelPinBtn').onclick=closePinModal;
+  document.getElementById('savePinBtn').onclick=savePin;
+  document.getElementById('pinTypeSelect').onchange=updateDynamicFields;
+  document.getElementById('closeStatementBtn').onclick=closeStatementModal;
+  document.getElementById('closeStatementBtn2').onclick=closeStatementModal;
+  document.getElementById('editStatementBtn').onclick=function(){if(currentStatementPin&&canEdit){closeStatementModal();editPin(currentStatementPin.id);}};
+  document.getElementById('closeConnBtn').onclick=closeConnModal;
+  document.getElementById('cancelConnBtn').onclick=closeConnModal;
+  document.getElementById('saveConnBtn').onclick=saveConnEdit;
+  document.getElementById('deleteConnBtn').onclick=deleteConn;
+  document.getElementById('connectionColors').onclick=function(e){var item=e.target.closest('.connection-color-item');if(item){state.connColor=item.dataset.color;renderSidebar();}};
+  document.getElementById('lineStyles').onclick=function(e){var btn=e.target.closest('.line-style-btn');if(btn){state.connStyle=btn.dataset.style;document.querySelectorAll('.line-style-btn').forEach(function(b){b.classList.remove('selected');});btn.classList.add('selected');}};
+  boardContainer.onclick=function(e){if(e.target===boardContainer||e.target===boardEl||e.target.classList.contains('pins-container')||e.target.classList.contains('connections-layer')){state.selectedPin=null;render();}};
+  document.onkeydown=function(e){if(e.key==='Escape'){state.connectingFrom=null;branchFrom.active=false;mapConnectingFrom=null;cancelZoneDrawing();document.getElementById('connectHint').classList.remove('show');document.getElementById('connectBtn').classList.remove('active');document.getElementById('mapConnectBtn').classList.remove('active');closePinModal();closeStatementModal();closeConnModal();closeEditCaseModal();closeMarkerModal();closeZoneModal();document.getElementById('profileModal').classList.remove('open');document.getElementById('agencyModal').classList.remove('open');if(contextMenu)contextMenu.classList.remove('show');if(pinContextMenu)pinContextMenu.classList.remove('show');}if(e.key==='Delete'&&activeTab==='map'&&canEdit){if(selectedMarker)deleteMarker(selectedMarker);if(selectedZone)deleteZone(selectedZone);}};
+  
+  // ============================================
+  // CONTEXT MENU SETUP
+  // ============================================
+  contextMenu = document.getElementById('contextMenu');
+  pinContextMenu = document.getElementById('pinContextMenu');
+  
+  // Prevent default browser context menu on board
+  document.addEventListener('contextmenu', function(e) {
+    if (boardContainer && (boardContainer.contains(e.target) || e.target.closest('.pin'))) {
+      e.preventDefault();
+    }
+  }, true);
+  
+  // Board context menu (right-click on empty board)
+  boardContainer.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Don't show board menu if clicking on a pin
+    if (e.target.closest('.pin')) {
+      return;
+    }
+    
+    if(pinContextMenu) pinContextMenu.classList.remove('show');
+    
+    // Store position for adding pins at click location
+    var rect = boardContainer.getBoundingClientRect();
+    contextMenuPos.x = (e.clientX - rect.left - board.x) / board.zoom;
+    contextMenuPos.y = (e.clientY - rect.top - board.y) / board.zoom;
+    contextMenuPos.useCustomPos = true;
+    
+    // Position menu
+    var menuX = e.clientX;
+    var menuY = e.clientY;
+    
+    // Keep menu on screen
+    if (menuX + 150 > window.innerWidth) menuX = window.innerWidth - 160;
+    if (menuY + 250 > window.innerHeight) menuY = window.innerHeight - 260;
+    
+    contextMenu.style.left = menuX + 'px';
+    contextMenu.style.top = menuY + 'px';
+    contextMenu.classList.add('show');
+  });
+  
+  // Board context menu item clicks
+  contextMenu.onclick = function(e) {
+    var item = e.target.closest('.context-menu-item');
+    if (!item) return;
+    e.stopPropagation();
+    contextMenu.classList.remove('show');
+    
+    var action = item.dataset.action;
+    switch(action) {
+      case 'addPin': openAddPinModal(); break;
+      case 'addSticky':
+        if(!canEdit){showToast('View only');return;}
+        openAddPinModal();
+        document.getElementById('pinTypeSelect').value = 'stickynote';
+        updateDynamicFields();
+        break;
+      case 'connect': document.getElementById('connectBtn').click(); break;
+      case 'freeLine': document.getElementById('freeLineBtn').click(); break;
+      case 'toggleLabels': document.getElementById('hidePinLabelsBtn').click(); break;
+      case 'myCases': document.getElementById('myCasesBtn').click(); break;
+      case 'newCase': createNewCase(); break;
+      case 'share': document.getElementById('shareBtn').click(); break;
+      case 'profile': document.getElementById('profileBtn').click(); break;
+      case 'resetView': document.getElementById('resetZoomBtn').click(); break;
+    }
+  };
+  
+  // Pin context menu item clicks
+  pinContextMenu.onclick = function(e) {
+    var item = e.target.closest('.context-menu-item');
+    if (!item) return;
+    e.stopPropagation();
+    pinContextMenu.classList.remove('show');
+    
+    if(!contextMenuPinId) return;
+    
+    var action = item.dataset.action;
+    switch(action) {
+      case 'editPin': editPin(contextMenuPinId); break;
+      case 'dupePin': dupePin(contextMenuPinId); break;
+      case 'deletePin': deletePin(contextMenuPinId); break;
+      case 'resetRotation':
+        var pin = state.pins.find(function(p){return p.id===contextMenuPinId;});
+        if(pin){
+          pin.rotation = 0;
+          saveCase();
+          render();
+          showToast('Rotation reset');
+        }
+        break;
+      case 'connectFrom':
+        if(!canEdit){showToast('View only');return;}
+        state.connectingFrom = contextMenuPinId;
+        document.getElementById('connectHint').textContent='Click another pin to connect';
+        document.getElementById('connectHint').classList.add('show');
+        document.getElementById('connectBtn').classList.add('active');
+        showToast('Click another pin to connect');
+        break;
+      case 'connectTo':
+        if(!canEdit){showToast('View only');return;}
+        if(state.connectingFrom && state.connectingFrom !== contextMenuPinId){
+          var newIdx=state.connections.length;
+          state.connections.push({from:state.connectingFrom,to:contextMenuPinId,color:state.connColor,style:state.connStyle,label:''});
+          state.connectingFrom=null;
+          document.getElementById('connectHint').classList.remove('show');
+          document.getElementById('connectBtn').classList.remove('active');
+          saveCase();render();
+          setTimeout(function(){openConnModal(newIdx);},100);
+          showToast('Connected!');
+        } else {
+          showToast('Start connection from another pin first (double-click or right-click → Connect From Here)');
+        }
+        break;
+    }
+  };
+  
+  // Prevent mousedown from closing menus when clicking inside them
+  contextMenu.onmousedown = function(e) { e.stopPropagation(); };
+  pinContextMenu.onmousedown = function(e) { e.stopPropagation(); };
+  
+  // Close menus on any left click outside
+  document.addEventListener('mousedown', function(e) {
+    if (contextMenu.contains(e.target) || pinContextMenu.contains(e.target)) return;
+    contextMenu.classList.remove('show');
+    pinContextMenu.classList.remove('show');
+  });
+  
+  // Handle window resize to maintain map bounds
+  window.addEventListener('resize',function(){
+    if(activeTab==='map'){
+      var minZoom=getMinMapZoom();
+      if(mapBoard.zoom<minZoom){
+        mapBoard.zoom=minZoom;
+      }
+      clampMapPosition();
+      updateMapTransform();
+    }
+  });
+}
+
+function updateBoard(){
+  boardEl.style.transform='translate('+board.x+'px,'+board.y+'px) scale('+board.zoom+')';
+  // Compensate text size when zoomed out (keep readable until 40% zoom)
+  var compensate = 1;
+  if(board.zoom < 1) {
+    compensate = Math.min(1/board.zoom, 2.5);
+  }
+  document.documentElement.style.setProperty('--zoom-compensate', compensate);
+}
+
+function updateMinimap(){var vp=document.getElementById('minimapViewport'),content=document.getElementById('minimapContent'),scale=150/8000;vp.style.width=Math.min((boardContainer.clientWidth/board.zoom)*scale,150)+'px';vp.style.height=Math.min((boardContainer.clientHeight/board.zoom)*scale,100)+'px';vp.style.left=Math.max(0,(-board.x/board.zoom)*scale)+'px';vp.style.top=Math.max(0,(-board.y/board.zoom)*scale)+'px';content.querySelectorAll('.minimap-pin').forEach(function(p){p.remove();});state.pins.forEach(function(pin){var m=document.createElement('div');m.className='minimap-pin';m.style.left=(pin.x*scale)+'px';m.style.top=(pin.y*scale)+'px';m.style.background=PIN_TYPES[pin.type]?PIN_TYPES[pin.type].color:'#666';content.appendChild(m);});}
+
+// ============================================
+// PIN OPERATIONS
+// ============================================
+function startDragPin(e,id){if(drag.active||!canEdit)return;e.stopPropagation();e.preventDefault();var pin=state.pins.find(function(p){return p.id===id;});if(!pin)return;drag={active:true,id:id,sx:e.clientX,sy:e.clientY,px:pin.x,py:pin.y};document.addEventListener('mousemove',doDragPin);document.addEventListener('mouseup',endDragPin);}
+function doDragPin(e){if(!drag.active)return;var pin=state.pins.find(function(p){return p.id===drag.id;});if(!pin)return;pin.x=Math.max(0,drag.px+(e.clientX-drag.sx)/board.zoom);pin.y=Math.max(0,drag.py+(e.clientY-drag.sy)/board.zoom);render();}
+function endDragPin(e){if(drag.active)saveCase();drag.active=false;document.removeEventListener('mousemove',doDragPin);document.removeEventListener('mouseup',endDragPin);}
+
+function selectPin(id){
+  if(branchFrom.active){var pin=state.pins.find(function(p){return p.id===id;});if(pin){state.connections.push({from:null,to:id,color:state.connColor,style:state.connStyle,label:'',x1:branchFrom.x,y1:branchFrom.y});branchFrom.active=false;document.getElementById('connectHint').classList.remove('show');document.getElementById('connectBtn').classList.remove('active');saveCase();render();showToast('Connected!');}return;}
+  if(state.connectingFrom){if(state.connectingFrom!==id){var newIdx=state.connections.length;state.connections.push({from:state.connectingFrom,to:id,color:state.connColor,style:state.connStyle,label:''});saveCase();render();setTimeout(function(){openConnModal(newIdx);},100);}state.connectingFrom=null;document.getElementById('connectHint').classList.remove('show');document.getElementById('connectBtn').classList.remove('active');return;}
+  state.selectedPin=state.selectedPin===id?null:id;render();
+}
+
+function toggleConnectMode(){if(!canEdit){showToast('View only');return;}if(state.selectedPin){state.connectingFrom=state.selectedPin;document.getElementById('connectHint').textContent='Click another pin to connect';document.getElementById('connectHint').classList.add('show');document.getElementById('connectBtn').classList.add('active');}else{showToast('Select a pin first');}}
+
+function addFreeLine(){if(!canEdit){showToast('View only');return;}var cx=(-board.x+boardContainer.clientWidth/2)/board.zoom,cy=(-board.y+boardContainer.clientHeight/2)/board.zoom;var offsetX=(Math.random()-0.5)*150,offsetY=(Math.random()-0.5)*150;state.connections.push({from:null,to:null,color:state.connColor,style:state.connStyle,label:'',x1:cx-60+offsetX,y1:cy+offsetY,x2:cx+60+offsetX,y2:cy+offsetY});saveCase();render();showToast('Free line added');}
+
+// ============================================
+// MODALS
+// ============================================
+function openAddPinModal(){if(!canEdit){showToast('View only');return;}editingPinId=null;document.getElementById('pinModalTitle').textContent='Add New Pin';document.getElementById('pinTypeSelect').value='suspect';document.getElementById('pinTitleInput').value='';document.getElementById('pinImageInput').value='';document.getElementById('pinContentInput').value='';document.getElementById('pinSizeSelect').value='medium';document.getElementById('pinPrioritySelect').value='normal';updateDynamicFields();document.getElementById('pinModal').classList.add('open');}
+function closePinModal(){document.getElementById('pinModal').classList.remove('open');editingPinId=null;}
+function updateDynamicFields(){var type=document.getElementById('pinTypeSelect').value,ti=PIN_TYPES[type];document.getElementById('pinModalIndicator').style.background=ti?ti.color:'#58a6ff';var f=ti?ti.fields:[],h='';if(f.length){h='<div class="form-row">';f.forEach(function(n,i){if(i&&i%2===0)h+='</div><div class="form-row">';h+='<div class="form-group"><label class="form-label">'+n+'</label><input type="text" class="form-input" data-field="'+n+'"></div>';});h+='</div>';}document.getElementById('dynamicFields').innerHTML=h;var contentLabel=document.getElementById('pinContentLabel');var contentInput=document.getElementById('pinContentInput');if(type==='stickynote'){contentLabel.textContent='To-Do Items (one per line)';contentInput.placeholder='Buy coffee\nInterview witness\nCheck CCTV footage';}else{contentLabel.textContent='Details / Description';contentInput.placeholder='Enter details...';}}
+function savePin(){var type=document.getElementById('pinTypeSelect').value,title=document.getElementById('pinTitleInput').value.trim(),image=document.getElementById('pinImageInput').value.trim(),content=document.getElementById('pinContentInput').value.trim(),size=document.getElementById('pinSizeSelect').value,priority=document.getElementById('pinPrioritySelect').value;if(!title){showToast('Enter a title');return;}var fields={};document.querySelectorAll('#dynamicFields input').forEach(function(inp){if(inp.value.trim())fields[inp.dataset.field]=inp.value.trim();});var subtitle='';if(type==='officer'&&fields['Badge'])subtitle='Badge #'+fields['Badge'];if(type==='vehicle'&&fields['License Plate'])subtitle=fields['License Plate'];if(type==='statement'&&fields['Statement By'])subtitle=fields['Statement By'];var profileStr=getProfileString();if(editingPinId){var pin=state.pins.find(function(p){return p.id===editingPinId;});if(pin){pin.type=type;pin.title=title;pin.image=image;pin.content=content;pin.size=size;pin.priority=priority;pin.fields=fields;pin.subtitle=subtitle;pin.modifiedBy=profileStr;pin.modifiedAt=Date.now();}}else{var cx,cy;if(contextMenuPos.useCustomPos){cx=contextMenuPos.x-80;cy=contextMenuPos.y-40;contextMenuPos.useCustomPos=false;}else{cx=(-board.x+boardContainer.clientWidth/2)/board.zoom-80+(Math.random()-0.5)*80;cy=(-board.y+boardContainer.clientHeight/2)/board.zoom-40+(Math.random()-0.5)*80;}state.pins.push({id:state.nextId++,type:type,title:title,image:image,content:content,subtitle:subtitle,size:size,priority:priority,fields:fields,x:cx,y:cy,created:Date.now(),createdBy:profileStr});}closePinModal();saveCase();render();showToast(editingPinId?'Updated!':'Pin added!');}
+function editPin(id){if(!canEdit){showToast('View only');return;}var pin=state.pins.find(function(p){return p.id===id;});if(!pin)return;editingPinId=id;document.getElementById('pinModalTitle').textContent='Edit Pin';document.getElementById('pinTypeSelect').value=pin.type;document.getElementById('pinTitleInput').value=pin.title;document.getElementById('pinImageInput').value=pin.image||'';document.getElementById('pinContentInput').value=pin.content||'';document.getElementById('pinSizeSelect').value=pin.size||'medium';document.getElementById('pinPrioritySelect').value=pin.priority||'normal';updateDynamicFields();setTimeout(function(){if(pin.fields){document.querySelectorAll('#dynamicFields input').forEach(function(inp){if(pin.fields[inp.dataset.field])inp.value=pin.fields[inp.dataset.field];});}},50);document.getElementById('pinModal').classList.add('open');}
+function deletePin(id){if(!canEdit){showToast('View only');return;}if(!confirm('Delete?'))return;state.pins=state.pins.filter(function(p){return p.id!==id;});state.connections=state.connections.filter(function(c){return c.from!==id&&c.to!==id;});if(state.selectedPin===id)state.selectedPin=null;saveCase();render();showToast('Deleted');}
+function dupePin(id){if(!canEdit){showToast('View only');return;}var pin=state.pins.find(function(p){return p.id===id;});if(!pin)return;state.pins.push({id:state.nextId++,type:pin.type,title:pin.title+' (copy)',image:pin.image,content:pin.content,subtitle:pin.subtitle,size:pin.size,priority:pin.priority,rotation:pin.rotation||0,fields:JSON.parse(JSON.stringify(pin.fields||{})),todos:JSON.parse(JSON.stringify(pin.todos||{})),x:pin.x+30,y:pin.y+30,created:Date.now()});saveCase();render();showToast('Duplicated');}
+
+function openStatementModal(id){var pin=state.pins.find(function(p){return p.id===id;});if(!pin)return;currentStatementPin=pin;var type=PIN_TYPES[pin.type]||PIN_TYPES.note;document.getElementById('statementIndicator').style.background=type.color;document.getElementById('statementTitle').textContent=pin.title;document.getElementById('statementSubtitle').textContent=type.icon+' '+type.name+(pin.subtitle?' • '+pin.subtitle:'');var h='';if(pin.image){h+='<div style="grid-column:1/-1;margin-bottom:10px;"><img src="'+esc(pin.image)+'" style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--border);" onerror="this.style.display=\'none\'"></div>';}if(pin.createdBy){h+='<div class="modal-field"><div class="modal-field-label">Created By</div><div class="modal-field-value">'+esc(pin.createdBy)+'</div></div>';}if(pin.modifiedBy){h+='<div class="modal-field"><div class="modal-field-label">Last Modified By</div><div class="modal-field-value">'+esc(pin.modifiedBy)+'</div></div>';}if(pin.fields){for(var k in pin.fields){if(pin.fields[k])h+='<div class="modal-field"><div class="modal-field-label">'+k+'</div><div class="modal-field-value">'+esc(pin.fields[k])+'</div></div>';}}document.getElementById('statementFields').innerHTML=h;var contentHtml='';if(pin.type==='stickynote'&&pin.content){var todos=pin.todos||{};var lines=pin.content.split('\n').filter(function(l){return l.trim();});contentHtml='<ul style="list-style:none;padding:0;margin:0;">';lines.forEach(function(line,i){var icon=todos[i]?'✅':'⬜';var style=todos[i]?'text-decoration:line-through;opacity:0.5;':'';contentHtml+='<li style="padding:4px 0;'+style+'">'+icon+' '+esc(line.trim())+'</li>';});contentHtml+='</ul>';document.getElementById('statementContent').innerHTML=contentHtml;}else{document.getElementById('statementContent').textContent=pin.content||'';}document.getElementById('statementModal').classList.add('open');}
+function closeStatementModal(){document.getElementById('statementModal').classList.remove('open');currentStatementPin=null;}
+
+function openConnModal(idx){editingConnIdx=idx;var conn=state.connections[idx];if(!conn)return;document.getElementById('connLabelInput').value=conn.label||'';document.getElementById('connColorSelect').value=conn.color||'red';document.getElementById('connStyleSelect').value=conn.style||'solid';var isAttached=conn.from||conn.to;var lockGroup=document.getElementById('connLockGroup');var lockCheck=document.getElementById('connLockedCheck');if(isAttached){lockGroup.style.display='block';lockCheck.checked=conn.locked!==false;}else{lockGroup.style.display='none';}document.getElementById('connectionModal').classList.add('open');document.getElementById('connLabelInput').focus();}
+function closeConnModal(){document.getElementById('connectionModal').classList.remove('open');editingConnIdx=null;editingMapConnIdx=null;}
+function saveConnEdit(){
+  if(!canEdit)return;
+  // Handle map connections
+  if(editingMapConnIdx!==null){
+    var conn=state.mapConnections[editingMapConnIdx];
+    if(!conn)return;
+    conn.label=document.getElementById('connLabelInput').value.trim();
+    conn.color=document.getElementById('connColorSelect').value;
+    conn.style=document.getElementById('connStyleSelect').value;
+    closeConnModal();
+    saveCase();
+    renderMapConnections();
+    showToast('Updated!');
+    return;
+  }
+  // Handle case board connections
+  if(editingConnIdx===null)return;
+  var conn=state.connections[editingConnIdx];
+  if(!conn)return;
+  conn.label=document.getElementById('connLabelInput').value.trim();
+  conn.color=document.getElementById('connColorSelect').value;
+  conn.style=document.getElementById('connStyleSelect').value;
+  var isAttached=conn.from||conn.to;
+  if(isAttached){conn.locked=document.getElementById('connLockedCheck').checked;}
+  closeConnModal();
+  saveCase();
+  render();
+  showToast('Updated!');
+}
+function deleteConn(){
+  if(!canEdit)return;
+  if(editingMapConnIdx!==null){
+    state.mapConnections.splice(editingMapConnIdx,1);
+    closeConnModal();
+    saveCase();
+    renderMapConnections();
+    showToast('Deleted');
+  }else if(editingConnIdx!==null){
+    state.connections.splice(editingConnIdx,1);
+    closeConnModal();
+    saveCase();
+    render();
+    showToast('Deleted');
+  }
+}
+
+function closeEditCaseModal(){document.getElementById('editCaseModal').classList.remove('open');editingCaseField=null;}
+function saveEditCase(){var val=document.getElementById('editCaseInput').value.trim();if(!val)return;if(editingCaseField==='number'){state.caseNumber=val;document.getElementById('caseNumber').textContent=val;}else{state.caseTitle=val;document.getElementById('caseTitle').textContent=val;}saveCase();closeEditCaseModal();showToast('Updated!');}
+
+// ============================================
+// UTILITIES
+// ============================================
+function updateStats(){document.getElementById('pinCount').textContent=state.pins.length;document.getElementById('linkCount').textContent=state.connections.length;for(var t in PIN_TYPES){var c=state.pins.filter(function(p){return p.type===t;}).length,el=document.getElementById('count-'+t);if(el)el.textContent=c;}}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function showSaveIndicator(status){var el=document.getElementById('saveIndicator');if(status==='saving'){el.innerHTML='<span>● Saving...</span>';el.className='save-indicator saving';}else if(status==='saved'){el.innerHTML='<span>● Saved</span>';el.className='save-indicator saved';}else{el.innerHTML='<span>● Error</span>';el.className='save-indicator';}}
+function formatDate(ts){return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function esc(str){if(!str)return'';var d=document.createElement('div');d.textContent=str;return d.innerHTML;}
+  </script>
+</body>
+</html>

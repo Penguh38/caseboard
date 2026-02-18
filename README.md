@@ -5,7 +5,7 @@ A collaborative investigation board built for law enforcement roleplay communiti
 ![License](https://img.shields.io/badge/license-Proprietary-red.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-green.svg)
 
-**[Live Demo →](https://caseboard-opal.vercel.app)**
+**[Live Demo →](https://caseboard-source.vercel.app)**
 
 ---
 

@@ -1,8 +1,8 @@
-#Case Board
+# LSSD Case Board
 
 A collaborative investigation board built for law enforcement roleplay communities. Pin suspects, victims, evidence and locations on a shared board — connect the dots and solve the case together.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-Proprietary-red.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-green.svg)
 
 ---
@@ -78,24 +78,11 @@ caseboard/
 
 ## License
 
-MIT License
+Copyright (c) 2025 Penguh38. All Rights Reserved.
 
-Copyright (c) 2025 Penguh38
+This software and its source code are proprietary and confidential.
+No part of this software may be reproduced, distributed, modified,
+or used in any form without the prior written permission of the author.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Unauthorized use, copying, or distribution of this software,
+via any medium, is strictly prohibited.
